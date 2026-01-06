@@ -11,4 +11,9 @@
 bash <(curl -fsSL https://proxy.api.030101.xyz/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/ssl/acme_3.0.sh)
 ```
 ---
+## 科技kejilion工具脚本
+* 非常丰富的脚本合集
 
+```
+bash <(curl -sL https://proxy.api.030101.xyz/https://raw.githubusercontent.com/kejilion/sh/refs/heads/main/kejilion.sh)
+```
