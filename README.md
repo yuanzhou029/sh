@@ -8,5 +8,5 @@
 * 申请失败，删除残留文件，然后重新申请
 #### 脚本源自:[slobys](https://github.com/slobys/SSL-Renewal])
 ```
-bash <(curl -fsSL https://raw.githubusercontent.com/slobys/SSL-Renewal/main/acme.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/ssl/acme_3.0.sh)
 ```
