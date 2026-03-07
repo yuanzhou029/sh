@@ -83,41 +83,6 @@ auto_setup_sudo() {
         warning_msg "su命令不可用"
     fi
     
-    # 如果以上方法都失败，检查是否有其他包管理器
-    if command -v apt >/dev/null 2>&1; then
-        if [ -f /etc/debian_version ] || [ -f /etc/ubuntu_version ]; then
-            info_msg "检测到Debian/Ubuntu系统"
-            # 如果已经是root用户，直接安装
-            if check_is_root; then
-                if ! command -v sudo >/dev/null 2>&1; then
-                    info_msg "正在安装sudo..."
-                    apt update && apt install -y sudo
-                    if [ $? -eq 0 ]; then
-                        success_msg "sudo安装成功"
-                    else
-                        error_msg "sudo安装失败"
-                    fi
-                fi
-                
-                # 将用户添加到sudo组
-                if id "$HASS_USERNAME" &> /dev/null; then
-                    info_msg "用户 '$HASS_USERNAME' 存在。"
-                    if ! groups "$HASS_USERNAME" | grep -q '\bsudo\b'; then
-                        usermod -aG sudo "$HASS_USERNAME"
-                        success_msg "用户 '$HASS_USERNAME' 已成功添加到 'sudo' 组。"
-                    else
-                        info_msg "用户 '$HASS_USERNAME' 已在 'sudo' 组中。"
-                    fi
-                else
-                    warning_msg "用户 '$HASS_USERNAME' 不存在。跳过将其添加到 'sudo' 组的操作。"
-                fi
-            else
-                error_msg "当前不是root用户，无法进行系统级配置"
-            fi
-        fi
-    else
-        error_msg "不支持的系统类型，无法自动安装sudo"
-    fi
 }
 
 # --- Sudo/Root 权限管理 ---
