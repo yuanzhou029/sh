@@ -30,7 +30,7 @@ bash <(curl -sSL https://run.nodepass.eu/np.sh)
 ```
 ## hass 设置静态IP脚本
 ```
-wget -O set_static_ip.sh https://pxy.140407.xyz/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/set_static_ip.sh && chmod +x set_static_ip.sh && sudo ./set_static_ip.sh
+wget -O set_static_ip.sh https://pxy.140407.xyz/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/set_static_ip.sh && chmod +x set_static_ip.sh && ./set_static_ip.sh
 ```
 ## 安装hass
 ```
