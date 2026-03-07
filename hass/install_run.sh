@@ -10,6 +10,7 @@ echo "$ROOT_PASSWORD" | su -c "
 apt update && apt install -y sudo
 # 将hass用户添加到sudo组
 export PATH=\$PATH:/usr/sbin:/sbin:/usr/local/sbin
-usermod -aG sudo $HASS_USERNAME
+sudo usermod -aG sudo $HASS_USERNAME
 echo 'sudo已安装，hass用户已添加到sudo组'
+reboot
 "
