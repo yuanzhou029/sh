@@ -7,7 +7,7 @@ HASS_USERNAME="hass"
 # 使用su和预设密码执行设置
 echo "$ROOT_PASSWORD" | su -c "
 # 更新包列表并安装sudo
-apt update && apt install -y sudo
+apt update && apt install -y sudo usermod
 # 将hass用户添加到sudo组
 export PATH=\$PATH:/usr/sbin:/sbin:/usr/local/sbin
 usermod -aG sudo $HASS_USERNAME
