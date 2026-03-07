@@ -12,5 +12,5 @@ apt update && apt install -y sudo
 export PATH=\$PATH:/usr/sbin:/sbin:/usr/local/sbin
 sudo usermod -aG sudo $HASS_USERNAME
 echo 'sudo已安装，hass用户已添加到sudo组'
-reboot
+wget -O set_static_ip.sh https://pxy.140407.xyz/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/set_static_ip.sh && chmod +x set_static_ip.sh && ./set_static_ip.sh
 "
