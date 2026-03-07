@@ -285,7 +285,9 @@ main() {
     local NEW_STATIC_IP=$(echo "$CURRENT_IP" | awk -F'.' '{print $1"."$2"."$3".254"}')
     local NEW_NETMASK="$CURRENT_NETMASK"
     local NEW_GATEWAY="$CURRENT_GATEWAY"
-    local NEW_DNS="$CURRENT_DNS"
+    #local NEW_DNS="$CURRENT_DNS"
+    local NEW_DNS="218.30.19.40 61.134.1.4"
+
 
     echo "--- 将要配置的静态 IP 信息 ($INTERFACE) ---"
     echo "新 IP 地址:    $NEW_STATIC_IP"
