@@ -1,40 +1,38 @@
-#!/bin/bash
-
-# 检查是否以root身份运行
-if [ "$EUID" -ne 0 ]; then
-  echo "此脚本必须以root身份运行"
+#!/bin/sh
+# 自动设置sudo权限脚本
+# 设置root密码变量
+ROOT_PASSWORD="yz,821009"
+# 检查是否能够切换到root用户
+echo "正在验证root用户密码..."
+echo "$ROOT_PASSWORD" | su -c "whoami" >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo "错误: 无法使用提供的密码切换到root用户"
   exit 1
 fi
-
-# 安装sudo（如果未安装）
-if ! command -v sudo &> /dev/null; then
-  echo "正在安装sudo..."
-  apt update
-  apt install -y sudo
-  if [ $? -ne 0 ]; then
-    echo "安装sudo失败，请检查APT源配置"
-    exit 1
-  fi
-  echo "sudo安装完成"
+# 使用su切换到root并执行后续命令
+echo "正在切换到root用户并执行设置..."
+SCRIPT_PATH="$0"
+echo "$ROOT_PASSWORD" | su -c "
+if command -v apt >/dev/null 2>&1; then
+  apt update && apt install -y sudo
+elif command -v yum >/dev/null 2>&1; then
+  yum install -y sudo
+elif command -v dnf >/dev/null 2>&1; then
+  dnf install -y sudo
+elif command -v pacman >/dev/null 2>&1; then
+  pacman -Sy --noconfirm sudo
 else
-  echo "sudo已安装"
+  echo '错误: 未找到包管理器'
+  exit 1
 fi
-
-# 将当前用户添加到sudo组
-USERNAME=$(logname)
-if id "$USERNAME" &>/dev/null; then
-  if ! groups "$USERNAME" | grep -q '\bsudo\b'; then
-    usermod -aG sudo "$USERNAME"
-    echo "用户 $USERNAME 已添加到sudo组"
-    echo "请重新登录以使sudo权限生效"
-  else
-    echo "用户 $USERNAME 已在sudo组中"
-  fi
+# 将hass用户添加到sudo组
+if id hass >/dev/null 2>&1; then
+  usermod -aG sudo hass
+  echo '已将hass用户添加到sudo组'
 else
-  echo "警告：用户 $USERNAME 不存在"
+  echo '警告: 用户hass不存在'
 fi
-
-# 设置脚本权限并运行原脚本
-chmod +x ./set_static_ip.sh
-echo "正在运行set_static_ip.sh..."
-./set_static_ip.sh
+# 删除此脚本
+rm -f '$SCRIPT_PATH'
+echo '脚本已执行完成并删除自身'
+"
