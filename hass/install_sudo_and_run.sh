@@ -14,7 +14,7 @@ echo 'sudo已安装，hass用户已添加到sudo组'
 "
 # 添加用户到sudo组后，需要重新加载组权限
 # 先切换到root用户，然后切换到hass用户使其组权限生效
-su - root -c "
+"$ROOT_PASSWORD" | su - root -c "
 # 切换到hass用户并执行newgrp命令使组权限立即生效
 su - $HASS_USERNAME -c 'newgrp sudo'
 "
