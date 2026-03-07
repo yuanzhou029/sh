@@ -2,7 +2,7 @@
 
 # --- 配置参数 ---
 # Home Assistant 运行的用户
-HA_USER="homeassistant"
+HA_USER="hass"
 # Home Assistant 的安装目录 (虚拟环境将在此处创建)
 HA_INSTALL_DIR="/srv/$HA_USER"
 # Home Assistant 的配置目录 (通常是 ~/.homeassistant，我们会使用这个)
@@ -37,7 +37,7 @@ if [[ $EUID -ne 0 ]]; then
    log_error "此脚本需要 root 权限运行。请使用 'sudo' 执行。"
 fi
 
-log_info "正在开始 Home Assistant 原生安装和自定义配置部署 (利用国内镜像)..."
+log_info "正在开始 Hass 原生安装和自定义配置部署 (利用国内镜像)..."
 
 # 0. 检查并安装必要工具 (python3-venv, git, build-essential, python3-dev)
 log_info "正在检查并安装必要的系统工具 (python3-venv, git, build-essential, python3-dev)..."
@@ -53,7 +53,7 @@ for tool in "${REQUIRED_TOOLS[@]}"; do
 done
 
 # 1. 创建 Home Assistant 用户和组
-log_info "正在创建 Home Assistant 用户和组 '$HA_USER'..."
+log_info "正在创建 Hass 用户和组 '$HA_USER'..."
 if ! id -u "$HA_USER" >/dev/null 2>&1; then
     # 动态构建 groupadd 命令，只添加存在的组
     GROUPS_TO_ADD=""
@@ -84,7 +84,7 @@ else
 fi
 
 # 2. 创建安装目录并设置权限
-log_info "正在创建 Home Assistant 安装目录 '$HA_INSTALL_DIR'..."
+log_info "正在创建 Hass 安装目录 '$HA_INSTALL_DIR'..."
 sudo mkdir -p "$HA_INSTALL_DIR" || log_error "无法创建目录 '$HA_INSTALL_DIR'。"
 
 # 再次检查用户是否存在，以防 systemd 还在加载
@@ -147,7 +147,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "pip 配置完成。"
 
     # 3.4 安装 Home Assistant
-    log_info "正在安装官方 Home Assistant 核心..."
+    log_info "正在安装官方 Hass 核心..."
     # 优先安装 setuptools 和 wheel 以确保构建依赖正常
     pip install --upgrade setuptools wheel || log_error "无法升级 setuptools/wheel。"
     pip install homeassistant || log_error "无法安装 Home Assistant。请检查网络连接、PyPI 镜像源、Python 开发头文件 (python3-dev) 或编译工具 (build-essential)。"
