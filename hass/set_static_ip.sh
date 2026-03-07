@@ -486,23 +486,22 @@ EOF
         info_msg "尝试 ping baidu.com 测试互联网连通性..."
         if ping -c 4 baidu.com &> /dev/null; then
             success_msg "Ping baidu.com 成功。互联网连通性确认。"
-            # 删除脚本自身
-            rm -f "$0"
-            info_msg "脚本已自动删除"
             exit 0
         else
             warning_msg "Ping baidu.com 失败。互联网连通性可能仍有问题。请检查防火墙规则或路由器设置。"
-            # 删除脚本自身
-            rm -f "$0"
-            info_msg "脚本已自动删除"
             exit 1 # 连通性失败，但也算部分成功，不应该直接 error_msg
         fi
     else
         error_msg "最终网络配置验证失败。请检查上述输出和相关日志。"
-        # 删除脚本自身
-        rm -f "$0"
-        info_msg "脚本已自动删除"
     fi
+}
+
+# 运行主函数
+main "$@"
+
+# 脚本执行完毕后自动删除自身
+rm -f "$0"
+info_msg "脚本已自动删除"
 }
 
 # 运行主函数
