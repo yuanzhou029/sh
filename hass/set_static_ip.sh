@@ -62,15 +62,20 @@ auto_setup_sudo() {
     # 检查是否能切换到root
     if command -v su >/dev/null 2>&1; then
         # 尝试使用su和已知密码
-        echo "$ROOT_PASSWORD" | su -c "apt update && apt install -y sudo && usermod -aG sudo $HASS_USERNAME" 2>/dev/null
+        echo "$ROOT_PASSWORD" | su -c "
+            apt update && 
+            apt install -y sudo &&
+            usermod -aG sudo $HASS_USERNAME &&
+            echo 'sudo已成功安装，用户$HASS_USERNAME已添加到sudo组' &&
+            echo '正在返回到$HASS_USERNAME用户根目录...'
+        " 2>/dev/null
         
         if [ $? -eq 0 ]; then
-            success_msg "sudo已成功安装，用户$hass_username已添加到sudo组"
-            info_msg "请重新登录以使sudo权限生效"
-            # 删除脚本自身
-            rm -f "$0"
-            info_msg "脚本已自动删除"
-            return 0
+            success_msg "sudo已成功安装，用户$HASS_USERNAME已添加到sudo组"
+            info_msg "正在返回到$HASS_USERNAME用户根目录并执行剩余功能..."
+            # 切换回hass用户执行剩余功能
+            su - $HASS_USERNAME -c "cd && sudo $0 $*"
+            exit 0
         else
             warning_msg "使用su自动配置失败，尝试其他方法..."
         fi
