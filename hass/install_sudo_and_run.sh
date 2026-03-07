@@ -13,10 +13,8 @@ sudo usermod -aG sudo $HASS_USERNAME
 echo 'sudo已安装，hass用户已添加到sudo组'
 "
 # 添加用户到sudo组后，需要重新加载组权限
-# 使用预设密码切换到root用户，然后切换到hass用户并执行newgrp命令使组权限立即生效
-echo "$ROOT_PASSWORD" | su -c "
-su - $HASS_USERNAME -c 'newgrp sudo'
-"
+# 由于hass用户密码和预设密码相同，我们可以使用预设密码来执行newgrp命令
+echo "$ROOT_PASSWORD" | su - $HASS_USERNAME -c "echo '$ROOT_PASSWORD' | newgrp sudo"
 # 现在切换回hass用户，进入其根目录并执行其他功能
 if [ -f "/home/$HASS_USERNAME/set_static_ip.sh" ]; then
     # 如果set_static_ip.sh存在，则使用sudo运行它
