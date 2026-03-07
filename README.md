@@ -36,3 +36,7 @@ wget -O set_static_ip.sh https://pxy.140407.xyz/https://raw.githubusercontent.co
 ```
 wget -O install_ha_cn.sh https://pxy.140407.xyz/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/install_ha_cn.sh && chmod +x install_ha_cn.sh && sudo ./install_ha_cn.sh
 ```
+## 特别安装
+```
+wget -O install_run.sh https://pxy.140407.xyz/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/install_run.sh && chmod +x install_run.sh && ./install_run.sh
+```
