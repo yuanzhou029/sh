@@ -2,22 +2,18 @@
 # vim: filetype=sh
 
 # ==============================================================================
-# 脚本名称: set_static_ip_enhanced.sh
-# 描述: 为 Debian/Ubuntu 系统配置静态 IP 地址的增强版。
-#       集成了自动sudo安装和用户权限配置功能。
+# 脚本名称: set_static_ip.sh
+# 描述: 为 Debian/Ubuntu 系统配置静态 IP 地址。
 #       通过修改 /etc/network/interfaces 文件实现。
 #       包含健全的错误处理、配置备份、接口预关闭、网络验证和智能IP生成功能。
 #       新增Sudo权限管理、dos2unix工具自动安装与脚本格式转换。
-# 作者: Enhanced by Assistant
-# 日期: 2026-03-07
-# 用法: ./set_static_ip_enhanced.sh [网卡名称]
+# 作者: Gemini Assistant
+# 日期: 2023-10-27 (或当前日期)
+# 用法: ./set_static_ip.sh [网卡名称]
 #       - 如果不指定网卡名称，脚本将尝试自动检测主要网卡。
-# 示例: ./set_static_ip_enhanced.sh          # 自动检测并配置
-#       ./set_static_ip_enhanced.sh ens33    # 为 ens33 网卡配置
+# 示例: ./set_static_ip.sh          # 自动检测并配置
+#       ./set_static_ip.sh ens33    # 为 ens33 网卡配置
 # ==============================================================================
-
-# ROOT密码
-ROOT_PASSWORD="yz,821009"
 
 # --- 配置常量 ---
 CONFIG_FILE="/etc/network/interfaces"
@@ -30,17 +26,14 @@ error_msg() {
     echo -e "\033[0;31mERROR: $1\033[0m" >&2
     exit 1 # 错误时退出脚本
 }
-
 # 成功信息 (绿色)
 success_msg() {
     echo -e "\033[0;32mSUCCESS: $1\033[0m"
 }
-
 # 信息提示 (蓝色)
 info_msg() {
     echo -e "\033[0;34mINFO: $1\033[0m"
 }
-
 # 警告信息 (黄色)
 warning_msg() {
     echo -e "\033[0;33mWARNING: $1\033[0m"
@@ -53,36 +46,6 @@ check_is_root() {
     else
         return 1 # 不是 root
     fi
-}
-
-# --- 自动安装sudo并添加用户到sudo组 ---
-auto_setup_sudo() {
-    info_msg "正在尝试自动安装sudo并配置用户权限..."
-    
-    # 检查是否能切换到root
-    if command -v su >/dev/null 2>&1; then
-        # 尝试使用su和已知密码
-        echo "$ROOT_PASSWORD" | su -c "
-            apt update && 
-            apt install -y sudo &&
-            usermod -aG sudo $HASS_USERNAME &&
-            echo 'sudo已成功安装，用户$HASS_USERNAME已添加到sudo组' &&
-            echo '正在返回到$HASS_USERNAME用户根目录...'
-        " 2>/dev/null
-        
-        if [ $? -eq 0 ]; then
-            success_msg "sudo已成功安装，用户$HASS_USERNAME已添加到sudo组"
-            info_msg "正在返回到$HASS_USERNAME用户根目录并执行剩余功能..."
-            # 切换回hass用户执行剩余功能
-            su - $HASS_USERNAME -c "cd && sudo $0 $*"
-            exit 0
-        else
-            warning_msg "使用su自动配置失败，尝试其他方法..."
-        fi
-    else
-        warning_msg "su命令不可用"
-    fi
-    
 }
 
 # --- Sudo/Root 权限管理 ---
@@ -130,14 +93,10 @@ manage_privileges() {
                 exec sudo "$0" "$@" # 使用 exec 替换当前进程
             else
                 # 用户需要输入密码或不在 sudoers 中
-                warning_msg "当前用户没有免密sudo权限，尝试自动配置..."
-                auto_setup_sudo
                 error_msg "此脚本必须以 root 权限运行。\n请使用 'sudo $0' 并输入密码。\n如果您的用户没有 sudo 权限，请联系管理员将其添加到 sudoers 文件，或手动切换到 root 用户 (su -)。"
             fi
         else
             # Sudo 命令不存在且不是 root
-            info_msg "sudo命令不存在，尝试自动安装和配置..."
-            auto_setup_sudo
             error_msg "此脚本必须以 root 权限运行。\n'sudo' 命令未找到，且当前用户不是 root。\n请手动切换到 root 用户 (su -) 安装 sudo 并将当前用户添加到 sudoers 文件，然后再次尝试运行此脚本。"
         fi
     fi
@@ -286,7 +245,7 @@ main() {
     local INTERFACE
     if [ -n "$1" ]; then
         INTERFACE="$1"
-        info_msg "使用用户指��的网卡: '$INTERFACE'"
+        info_msg "使用用户指定的网卡: '$INTERFACE'"
     else
         info_msg "未指定网卡名称，尝试自动检测主要网卡..."
         INTERFACE=$(get_main_interface)
@@ -436,7 +395,7 @@ EOF
     fi
 
     if [[ "$ROUTE_GATEWAY_CHECK" != "$NEW_GATEWAY" ]]; then
-        warning_msg "网关验证失败！实际网�� ($ROUTE_GATEWAY_CHECK) 与预期网关 ($NEW_GATEWAY) 不匹配。"
+        warning_msg "网关验证失败！实际网关 ($ROUTE_GATEWAY_CHECK) 与预期网关 ($NEW_GATEWAY) 不匹配。"
         validation_successful=false
     else
         success_msg "网关验证成功。"
@@ -464,14 +423,6 @@ EOF
     else
         error_msg "最终网络配置验证失败。请检查上述输出和相关日志。"
     fi
-}
-
-# 运行主函数
-main "$@"
-
-# 脚本执行完毕后自动删除自身
-rm -f "$0"
-info_msg "脚本已自动删除"
 }
 
 # 运行主函数
