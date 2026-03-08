@@ -15,7 +15,25 @@ HA_MIRROR_CONFIG_SUBDIR="config"
 # --- 国内镜像源配置 ---
 # PyPI 镜像源 (选择一个稳定且速度快的)
 # 推荐使用清华大学或阿里云
-PIP_MIRROR_URL="https://pypi.tuna.tsinghua.edu.cn/simple" # <--- **您可以选择其他镜像源**
+PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple" # <--- **您可以选择其他镜像源**
+
+# 这些镜像源可以显著加速 Python 包的下载和安装速度，特别是对于国内用户。
+
+# 清华大学 (Tsinghua University)
+# 地址：https://pypi.tuna.tsinghua.edu.cn/simple
+# 特点：目前最常用、最稳定、更新速度快的镜像之一。
+
+# 阿里云 (Aliyun)
+# 地址：https://mirrors.aliyun.com/pypi/simple/
+# 特点：大型云服务商提供，稳定可靠。
+
+# 华为云 (Huawei Cloud)
+# 地址：https://repo.huaweicloud.com/repository/pypi/simple/
+# 特点：华为云提供的镜像，速度和稳定性良好。
+
+# 中国科学技术大学 (USTC)
+# 地址：https://pypi.mirrors.ustc.edu.cn/simple/
+# 特点：更新速度快，服务稳定
 
 # GitHub 代理/镜像 (可选，如果直接连接 GitHub 困难)
 # 例如: http://proxy.example.com:port 或 https://proxy.example.com:port
