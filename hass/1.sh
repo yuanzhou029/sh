@@ -12,7 +12,7 @@ HA_CONFIG_DIR="/home/$HA_USER/.homeassistant"
 #            如果您的 "url.yh-iot.cloudns.org" 是一个 GitHub 镜像，并且期望将原始 GitHub URL 作为其路径一部分，
 #            请将其修改为正确的镜像地址格式，例如：
 #            HA_MIRROR_REPO="https://url.yh-iot.cloudns.org/yuanzhou029/ha-mirror.git"
-HA_MIRROR_REPO="https://github.com/yuanzhou029/ha-mirror.git" # <--- **强烈建议使用原始 GitHub URL**
+HA_MIRROR_REPO="https://gitee.com/xahwkj/hass-mirror.git" # <--- **强烈建议使用原始 GitHub URL**
 
 # ha-mirror 仓库中包含 Home Assistant 配置文件的子目录名称
 HA_MIRROR_CONFIG_SUBDIR="config"
