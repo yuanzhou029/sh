@@ -12,28 +12,23 @@ HA_MIRROR_REPO="https://pxy.140407.xyz/https://github.com/yuanzhou029/ha-mirror.
 # ha-mirror 仓库中包含 Home Assistant 配置文件的子目录名称
 HA_MIRROR_CONFIG_SUBDIR="config"
 
-# --- 国内镜像源配置 ---
-# PyPI 镜像源 (选择一个稳定且速度快的)
-# 推荐使用清华大学或阿里云
+# Home Assistant 的固定安装版本。例如："2024.1.0"
+# 如果您想安装最新版本，可以将其留空，但为了固定版本，建议指定。
+# 示例：HA_VERSION="2024.1.0"
+HA_VERSION="2026.2.3" # <--- **** 请在这里指定您需要的 Home Assistant 版本 ****
+
+# --- PIP 包源配置 ---
+# 是否使用您的 GitHub 仓库作为 PIP 包的本地镜像。
+# 如果设置为 "true"，脚本将尝试从 HA_MIRROR_REPO_INNER/HA_LOCAL_PIP_MIRROR_SUBDIR_INNER 路径安装所有包。
+# 这要求您已手动将所有 Home Assistant 及其依赖的 .whl 文件下载并上传到该 GitHub 仓库子目录。
+# 如果设置为 "false"，脚本将使用 PIP_MIRROR_URL 进行安装。
+USE_LOCAL_PIP_MIRROR="true" # <--- **根据您的需求设置 "true" 或 "false"**
+
+# 如果 USE_LOCAL_PIP_MIRROR 为 "true"，此变量指定您的 ha-mirror 仓库中存放 .whl 文件的子目录。
+HA_LOCAL_PIP_MIRROR_SUBDIR="pypi_packages" # <--- **请确保此目录在您的 Git 仓库中存在且包含所有 .whl 文件**
+
+# 如果 USE_LOCAL_PIP_MIRROR 为 "false"，则使用此 PyPI 镜像源
 PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple" # <--- **您可以选择其他镜像源**
-
-# 这些镜像源可以显著加速 Python 包的下载和安装速度，特别是对于国内用户。
-
-# 清华大学 (Tsinghua University)
-# 地址：https://pypi.tuna.tsinghua.edu.cn/simple
-# 特点：目前最常用、最稳定、更新速度快的镜像之一。
-
-# 阿里云 (Aliyun)
-# 地址：https://mirrors.aliyun.com/pypi/simple/
-# 特点：大型云服务商提供，稳定可靠。
-
-# 华为云 (Huawei Cloud)
-# 地址：https://repo.huaweicloud.com/repository/pypi/simple/
-# 特点：华为云提供的镜像，速度和稳定性良好。
-
-# 中国科学技术大学 (USTC)
-# 地址：https://pypi.mirrors.ustc.edu.cn/simple/
-# 特点：更新速度快，服务稳定
 
 # GitHub 代理/镜像 (可选，如果直接连接 GitHub 困难)
 # 例如: http://proxy.example.com:port 或 https://proxy.example.com:port
@@ -55,7 +50,12 @@ if [[ $EUID -ne 0 ]]; then
    log_error "此脚本需要 root 权限运行。请使用 'sudo' 执行。"
 fi
 
-log_info "正在开始 Hass 原生安装和自定义配置部署 (利用国内镜像)..."
+log_info "正在开始 Hass 原生安装和自定义配置部署..."
+if [ "$USE_LOCAL_PIP_MIRROR" = "true" ]; then
+    log_info "PIP 将尝试从您的 GitHub 仓库本地镜像获取包。"
+else
+    log_info "PIP 将使用 PyPI 镜像源获取包。"
+fi
 
 # 0. 检查并安装必要工具 (python3-venv, git, build-essential, python3-dev)
 log_info "正在检查并安装必要的系统工具 (python3-venv, git, build-essential, python3-dev)..."
@@ -135,6 +135,9 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     PIP_MIRROR_URL_INNER="{{PIP_MIRROR_URL}}"
     GIT_PROXY_INNER="{{GIT_PROXY}}"
     HA_USER_INNER="{{HA_USER}}" # 也需要传递用于 chown
+    HA_VERSION_INNER="{{HA_VERSION}}" # Home Assistant 版本变量
+    USE_LOCAL_PIP_MIRROR_INNER="{{USE_LOCAL_PIP_MIRROR}}" # 是否使用本地 PIP 镜像
+    HA_LOCAL_PIP_MIRROR_SUBDIR_INNER="{{HA_LOCAL_PIP_MIRROR_SUBDIR}}" # 本地 PIP 镜像子目录
 
     # 显式地将 /usr/bin 添加到 PATH，确保可以找到 gcc 等编译工具
     export PATH="/usr/bin:$PATH"
@@ -156,19 +159,68 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "虚拟环境激活成功。"
     log_info "激活后 PATH 环境变量: $PATH"
 
-    # 3.3 配置 pip 使用国内镜像源
-    log_info "正在配置 pip 使用国内镜像源: $PIP_MIRROR_URL_INNER"
-    pip config set global.index-url "$PIP_MIRROR_URL_INNER" || log_error "无法设置 pip 镜像源。"
-    # 提取域名作为 trusted-host
-    TRUSTED_HOST_INNER=$(echo "$PIP_MIRROR_URL_INNER" | sed -E 's/https?:\/\/(.*)\/simple.*/\1/')
-    pip config set global.trusted-host "$TRUSTED_HOST_INNER" || log_error "无法设置 pip trusted-host。"
+    # 3.3 配置 pip 使用国内镜像源 或 本地镜像
+    # 为了让 git clone 先执行（因为它提供了本地镜像的whl文件），
+    # pip config set 动作要放在 git clone 之后或者先设置好，然后根据 USE_LOCAL_PIP_MIRROR_INNER 来使用
+    
+    # 我们先克隆仓库，确保本地镜像文件存在
+    log_info "正在克隆或更新 ha-mirror 仓库到 '$HA_INSTALL_DIR_INNER/ha-mirror-repo'..."
+    CLONE_URL_INNER="$HA_MIRROR_REPO_INNER"
+
+    if [ -n "$GIT_PROXY_INNER" ]; then
+        log_info "正在设置 Git 环境变量代理: $GIT_PROXY_INNER"
+        export ALL_PROXY="$GIT_PROXY_INNER"
+        export HTTPS_PROXY="$GIT_PROXY_INNER"
+        export HTTP_PROXY="$GIT_PROXY_INNER"
+    fi
+
+    if [ ! -d "$HA_INSTALL_DIR_INNER/ha-mirror-repo" ]; then
+        git clone "$CLONE_URL_INNER" "$HA_INSTALL_DIR_INNER/ha-mirror-repo" || log_error "无法克隆 ha-mirror 仓库。请检查 Git 代理或仓库地址。"
+        log_info "ha-mirror 仓库克隆成功。"
+    else
+        log_info "ha-mirror 仓库已存在，正在执行 'git pull' 更新。"
+        cd "$HA_INSTALL_DIR_INNER/ha-mirror-repo"
+        git pull || log_error "无法更新 ha-mirror 仓库。请检查 Git 代理或仓库地址。"
+        cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
+        log_info "ha-mirror 仓库更新成功。"
+    fi
+
+    # 清除 Git 代理环境变量，以免影响后续操作
+    unset ALL_PROXY HTTPS_PROXY HTTP_PROXY
+
+
+    if [ "$USE_LOCAL_PIP_MIRROR_INNER" = "true" ]; then
+        log_info "正在配置 pip 使用本地镜像源: $HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_LOCAL_PIP_MIRROR_SUBDIR_INNER"
+        # 启用本地镜像时，禁用默认 PyPI 索引，强制只从本地查找
+        LOCAL_WHEEL_DIR="$HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_LOCAL_PIP_MIRROR_SUBDIR_INNER"
+        if [ ! -d "$LOCAL_WHEEL_DIR" ]; then
+            log_error "错误：启用了本地 PIP 镜像，但本地镜像目录 '$LOCAL_WHEEL_DIR' 不存在。请确保您已将 .whl 文件上传到您的 GitHub 仓库并克隆到正确位置。"
+        fi
+        PIP_INSTALL_OPTS="--no-index --find-links=$LOCAL_WHEEL_DIR"
+    else
+        log_info "正在配置 pip 使用国内镜像源: $PIP_MIRROR_URL_INNER"
+        pip config set global.index-url "$PIP_MIRROR_URL_INNER" || log_error "无法设置 pip 镜像源。"
+        TRUSTED_HOST_INNER=$(echo "$PIP_MIRROR_URL_INNER" | sed -E 's/https?:\/\/(.*)\/simple.*/\1/')
+        pip config set global.trusted-host "$TRUSTED_HOST_INNER" || log_error "无法设置 pip trusted-host。"
+        PIP_INSTALL_OPTS="" # 无特殊选项，使用全局配置的 PyPI 镜像
+    fi
     log_info "pip 配置完成。"
 
     # 3.4 安装 Home Assistant 核心
     log_info "正在安装官方 Hass 核心..."
     # 优先安装 setuptools 和 wheel 以确保构建依赖正常
-    pip install --upgrade setuptools wheel || log_error "无法升级 setuptools/wheel。"
-    pip install homeassistant || log_error "无法安装 Home Assistant。请检查网络连接、PyPI 镜像源、Python 开发文件 (python3-dev) 或编译工具 (build-essential)。"
+    pip install --upgrade setuptools wheel $PIP_INSTALL_OPTS || log_error "无法升级 setuptools/wheel。"
+    
+    HA_INSTALL_TARGET="homeassistant"
+    if [ -n "$HA_VERSION_INNER" ]; then
+        HA_INSTALL_TARGET="homeassistant==$HA_VERSION_INNER"
+        log_info "正在安装 Home Assistant 固定版本: $HA_INSTALL_TARGET"
+    else
+        log_info "HA_VERSION 未指定，正在安装 Home Assistant 最新版本。"
+    fi
+
+    # 使用 PIP_INSTALL_OPTS 来控制包源
+    pip install $PIP_INSTALL_OPTS "$HA_INSTALL_TARGET" || log_error "无法安装 Home Assistant '$HA_INSTALL_TARGET'。请检查网络连接、PyPI 镜像源/本地镜像内容、Python 开发文件 (python3-dev) 或编译工具 (build-essential)。"
     log_info "官方 Home Assistant 核心安装成功。"
 
     # 新增步骤：预安装 Home Assistant 运行时可能需要的特定依赖
@@ -199,11 +251,12 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "file-read-backwards==2.0.0"
         "async-upnp-client==0.46.2"
         "bluetooth-adapters==2.1.0"
-    )
+)
     
     for pkg in "${ADDITIONAL_PACKAGES[@]}"; do
         log_info "正在安装 $pkg..."
-        pip install "$pkg" || log_error "无法安装依赖包 '$pkg'。请检查网络连接或包名是否正确。"
+        # 同样使用 PIP_INSTALL_OPTS 来控制包源
+        pip install $PIP_INSTALL_OPTS "$pkg" || log_error "无法安装依赖包 '$pkg'。请检查网络连接、本地镜像内容或包名是否正确。"
     done
     log_info "所有额外依赖预安装完成。"
 
@@ -218,30 +271,9 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     fi
     log_info "'hass' 可执行文件存在并有执行权限: $HASS_VENV_PATH_INNER"
 
-    # 3.6 克隆 ha-mirror 仓库 (用于获取自定义配置)
-    log_info "正在克隆或更新 ha-mirror 仓库到 '$HA_INSTALL_DIR_INNER/ha-mirror-repo'..."
-    CLONE_URL_INNER="$HA_MIRROR_REPO_INNER"
-
-    if [ -n "$GIT_PROXY_INNER" ]; then
-        log_info "正在设置 Git 环境变量代理: $GIT_PROXY_INNER"
-        export ALL_PROXY="$GIT_PROXY_INNER"
-        export HTTPS_PROXY="$GIT_PROXY_INNER"
-        export HTTP_PROXY="$GIT_PROXY_INNER"
-    fi
-
-    if [ ! -d "$HA_INSTALL_DIR_INNER/ha-mirror-repo" ]; then
-        git clone "$CLONE_URL_INNER" "$HA_INSTALL_DIR_INNER/ha-mirror-repo" || log_error "无法克隆 ha-mirror 仓库。请检查 Git 代理或仓库地址。"
-        log_info "ha-mirror 仓库克隆成功。"
-    else
-        log_info "ha-mirror 仓库已存在，正在执行 'git pull' 更新。"
-        cd "$HA_INSTALL_DIR_INNER/ha-mirror-repo"
-        git pull || log_error "无法更新 ha-mirror 仓库。请检查 Git 代理或仓库地址。"
-        cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
-        log_info "ha-mirror 仓库更新成功。"
-    fi
-
-    # 清除 Git 代理环境变量，以免影响后续操作
-    unset ALL_PROXY HTTPS_PROXY HTTP_PROXY
+    # 3.6 克隆 ha-mirror 仓库 (用于获取自定义配置和本地 PIP 镜像)
+    # 此部分已上移到 pip 配置之前，以确保本地镜像目录可用
+    log_info "ha-mirror 仓库已克隆/更新。"
 
     # 3.7 部署自定义配置和组件 (来自 ha-mirror 的 config 目录)
     log_info "正在部署自定义配置和组件到 Home Assistant 配置目录 '$HA_CONFIG_DIR_INNER'..."
@@ -274,6 +306,9 @@ sed -i \
     -e "s|{{HA_MIRROR_CONFIG_SUBDIR}}|$HA_MIRROR_CONFIG_SUBDIR|g" \
     -e "s|{{PIP_MIRROR_URL}}|$PIP_MIRROR_URL|g" \
     -e "s|{{GIT_PROXY}}|$GIT_PROXY|g" \
+    -e "s|{{HA_VERSION}}|$HA_VERSION|g" \
+    -e "s|{{USE_LOCAL_PIP_MIRROR}}|$USE_LOCAL_PIP_MIRROR|g" \
+    -e "s|{{HA_LOCAL_PIP_MIRROR_SUBDIR}}|$HA_LOCAL_PIP_MIRROR_SUBDIR|g" \
     "$TEMP_HA_SCRIPT"
 
 # 赋予临时脚本执行权限
