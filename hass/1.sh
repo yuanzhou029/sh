@@ -8,7 +8,12 @@ HA_INSTALL_DIR="/srv/$HA_USER"
 # Home Assistant 的配置目录 (通常是 ~/.homeassistant，我们会使用这个)
 HA_CONFIG_DIR="/home/$HA_USER/.homeassistant"
 # 您的 ha-mirror 仓库的 Git URL
-HA_MIRROR_REPO="https://gitee.com/xahwkj/hass-mirror.git" # <--- **请务必将此替换为您的实际 GitHub 仓库 URL**
+# IMPORTANT: 建议使用原始的 GitHub URL，并通过 GIT_PROXY 变量进行代理。
+#            如果您的 "url.yh-iot.cloudns.org" 是一个 GitHub 镜像，并且期望将原始 GitHub URL 作为其路径一部分，
+#            请将其修改为正确的镜像地址格式，例如：
+#            HA_MIRROR_REPO="https://url.yh-iot.cloudns.org/yuanzhou029/ha-mirror.git"
+HA_MIRROR_REPO="https://gitee.com/xahwkj/ha-mirror.git" # <--- **强烈建议使用原始 GitHub URL**
+
 # ha-mirror 仓库中包含 Home Assistant 配置文件的子目录名称
 HA_MIRROR_CONFIG_SUBDIR="config"
 
@@ -53,13 +58,16 @@ fi
 log_info "正在开始 Hass 原生安装和自定义配置部署..."
 if [ "$USE_LOCAL_PIP_MIRROR" = "true" ]; then
     log_info "PIP 将尝试从您的 GitHub 仓库本地镜像获取包。"
+    log_info "重要：请确保您的 GitHub 仓库的 '$HA_LOCAL_PIP_MIRROR_SUBDIR' 目录中包含了所有 Home Assistant 及其依赖的 .whl 文件，并且文件名正确、内容完整。"
+    log_info "如果您曾遇到 'setuptools-82.0.0' 的错误，请务必先检查并删除本地镜像中任何名为 'setuptools-82.0.0-py3-none-any.whl' 的文件，因为它是一个不存在的、可能已损坏的版本。"
 else
     log_info "PIP 将使用 PyPI 镜像源获取包。"
 fi
 
-# 0. 检查并安装必要工具 (python3-venv, git, build-essential, python3-dev)
-log_info "正在检查并安装必要的系统工具 (python3-venv, git, build-essential, python3-dev)..."
-REQUIRED_TOOLS=("python3-venv" "git" "build-essential" "python3-dev") # <-- 增加 python3-dev
+# 0. 检查并安装必要工具 (python3-venv, git, build-essential, python3-dev, git-lfs)
+log_info "正在检查并安装必要的系统工具 (python3-venv, git, build-essential, python3-dev, git-lfs)..."
+# 注意：git-lfs 的包名可能因发行版而异。在 Debian/Ubuntu 上是 git-lfs。
+REQUIRED_TOOLS=("python3-venv" "git" "build-essential" "python3-dev" "git-lfs") 
 for tool in "${REQUIRED_TOOLS[@]}"; do
     if ! dpkg -s "$tool" &>/dev/null; then # 适用于 Debian/Ubuntu
         log_info "$tool 未安装，正在尝试安装..."
@@ -123,10 +131,6 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info() { echo "INFO (HA_USER): $1"; }
     log_error() { echo "ERROR (HA_USER): $1" >&2; exit 1; }
 
-    log_info "当前用户: $(whoami)"
-    log_info "当前工作目录: $(pwd)"
-    log_info "PATH 环境变量: $PATH"
-
     # 定义从外部脚本继承的变量 (需要替换)
     HA_INSTALL_DIR_INNER="{{HA_INSTALL_DIR}}"
     HA_CONFIG_DIR_INNER="{{HA_CONFIG_DIR}}"
@@ -138,6 +142,10 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     HA_VERSION_INNER="{{HA_VERSION}}" # Home Assistant 版本变量
     USE_LOCAL_PIP_MIRROR_INNER="{{USE_LOCAL_PIP_MIRROR}}" # 是否使用本地 PIP 镜像
     HA_LOCAL_PIP_MIRROR_SUBDIR_INNER="{{HA_LOCAL_PIP_MIRROR_SUBDIR}}" # 本地 PIP 镜像子目录
+
+    log_info "当前用户: $(whoami)"
+    log_info "当前工作目录: $(pwd)"
+    log_info "PATH 环境变量: $PATH"
 
     # 显式地将 /usr/bin 添加到 PATH，确保可以找到 gcc 等编译工具
     export PATH="/usr/bin:$PATH"
@@ -160,13 +168,17 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "激活后 PATH 环境变量: $PATH"
 
     # 3.3 配置 pip 使用国内镜像源 或 本地镜像
-    # 为了让 git clone 先执行（因为它提供了本地镜像的whl文件），
-    # pip config set 动作要放在 git clone 之后或者先设置好，然后根据 USE_LOCAL_PIP_MIRROR_INNER 来使用
-    
     # 我们先克隆仓库，确保本地镜像文件存在
+    
+    # --- Git Clone/Pull 增强 ---
+    MAX_RETRIES=5
+    RETRY_DELAY=10 # seconds
+
     log_info "正在克隆或更新 ha-mirror 仓库到 '$HA_INSTALL_DIR_INNER/ha-mirror-repo'..."
     CLONE_URL_INNER="$HA_MIRROR_REPO_INNER"
+    HA_MIRROR_REPO_PATH="$HA_INSTALL_DIR_INNER/ha-mirror-repo"
 
+    # 设置 Git 代理环境变量
     if [ -n "$GIT_PROXY_INNER" ]; then
         log_info "正在设置 Git 环境变量代理: $GIT_PROXY_INNER"
         export ALL_PROXY="$GIT_PROXY_INNER"
@@ -174,42 +186,156 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         export HTTP_PROXY="$GIT_PROXY_INNER"
     fi
 
-    if [ ! -d "$HA_INSTALL_DIR_INNER/ha-mirror-repo" ]; then
-        git clone "$CLONE_URL_INNER" "$HA_INSTALL_DIR_INNER/ha-mirror-repo" || log_error "无法克隆 ha-mirror 仓库。请检查 Git 代理或仓库地址。"
-        log_info "ha-mirror 仓库克隆成功。"
-    else
-        log_info "ha-mirror 仓库已存在，正在执行 'git pull' 更新。"
-        cd "$HA_INSTALL_DIR_INNER/ha-mirror-repo"
-        git pull || log_error "无法更新 ha-mirror 仓库。请检查 Git 代理或仓库地址。"
-        cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
-        log_info "ha-mirror 仓库更新成功。"
-    fi
+    clone_or_pull_repo() {
+        local attempt=1
+        while [ $attempt -le $MAX_RETRIES ]; do
+            log_info "Git 操作尝试 $attempt/$MAX_RETRIES..."
+            local success=0
+            if [ ! -d "$HA_MIRROR_REPO_PATH" ]; then
+                log_info "尝试克隆 ha-mirror 仓库..."
+                if git clone "$CLONE_URL_INNER" "$HA_MIRROR_REPO_PATH"; then
+                    log_info "ha-mirror 仓库克隆成功。"
+                    success=1
+                fi
+            else
+                log_info "ha-mirror 仓库已存在，尝试执行 'git pull' 更新。"
+                # 切换到仓库目录执行 pull
+                cd "$HA_MIRROR_REPO_PATH" || log_error "无法进入 $HA_MIRROR_REPO_PATH"
+                if git pull; then
+                    log_info "ha-mirror 仓库更新成功。"
+                    success=1
+                fi
+                cd "$HA_INSTALL_DIR_INNER" # 即使失败也要返回
+            fi
+
+            if [ "$success" -eq 1 ]; then
+                # 在 Git clone/pull 成功后，初始化并拉取 Git LFS 文件
+                log_info "执行 Git LFS 初始化和拉取..."
+                # 先进入仓库目录
+                cd "$HA_MIRROR_REPO_PATH" || log_error "无法进入 $HA_MIRROR_REPO_PATH"
+                git lfs install || { log_error "Git LFS 安装失败。请确保 git-lfs 已正确安装。"; return 1; } # LFS install 只需运行一次
+                if git lfs pull; then
+                    log_info "Git LFS 文件拉取成功。"
+                    cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
+                    return 0 # Git 和 Git LFS 都成功
+                else
+                    log_info "Git LFS 文件拉取失败。可能网络不稳定或代理问题。将在 $RETRY_DELAY 秒后重试..."
+                    cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
+                fi
+            fi
+
+            log_info "Git 或 Git LFS 操作失败，将在 $RETRY_DELAY 秒后重试..."
+            sleep $RETRY_DELAY
+            attempt=$((attempt + 1))
+        done
+        log_error "多次尝试后无法克隆/更新 ha-mirror 仓库或拉取 Git LFS 文件。请检查 Git 代理、LFS 配置、仓库地址或网络连接。"
+    }
+
+    clone_or_pull_repo
 
     # 清除 Git 代理环境变量，以免影响后续操作
-    unset ALL_PROXY HTTPS_PROXY HTTP_PROXY
+    if [ -n "$GIT_PROXY_INNER" ]; then
+        unset ALL_PROXY HTTPS_PROXY HTTP_PROXY
+        log_info "Git 代理环境变量已清除。"
+    fi
+
+    # --- 增强的文件完整性检查 ---
+    # 整体仓库大小的粗略检查 (你可能需要根据你的 GitHub 仓库的实际大小来调整这个值)
+    # 这个值应该能容纳除了那个100MB大文件之外的所有文件，或者所有文件都下载完整后的总大小。
+    MIN_EXPECTED_REPO_SIZE_MB=80 # 例如，如果你的100MB文件是HA核心，那么总大小应该在100MB以上
+    REPO_SIZE_MB=$(du -sm "$HA_MIRROR_REPO_PATH" | awk '{print $1}')
+    if [ "$REPO_SIZE_MB" -lt "$MIN_EXPECTED_REPO_SIZE_MB" ]; then
+        log_error "ha-mirror 仓库 ($REPO_SIZE_MB MB) 小于预期大小 ($MIN_EXPECTED_REPO_SIZE_MB MB)。可能未完全下载或内容不完整。请检查仓库内容并确保网络稳定。"
+    else
+        log_info "ha-mirror 仓库整体大小检查通过 ($REPO_SIZE_MB MB)。"
+    fi
+
+    # 针对 100MB 大文件的特定检查
+    # 假设这个 100MB 文件是 homeassistant 核心的 .whl 文件
+    # 请根据你的实际情况调整文件名模式和预期大小！
+    if [ "$USE_LOCAL_PIP_MIRROR_INNER" = "true" ]; then
+        LOCAL_WHEEL_DIR="$HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_LOCAL_PIP_MIRROR_SUBDIR_INNER"
+        if [ -n "$HA_VERSION_INNER" ]; then
+            HA_CORE_WHL_FILENAME_PATTERN="homeassistant-$HA_VERSION_INNER-*.whl" # 例如：homeassistant-2026.2.3-py3-none-any.whl
+            HA_CORE_WHL_PATH=$(find "$LOCAL_WHEEL_DIR" -maxdepth 1 -name "$HA_CORE_WHL_FILENAME_PATTERN" -print -quit)
+            
+            if [ -f "$HA_CORE_WHL_PATH" ]; then
+                # 获取文件大小 (字节)
+                HA_CORE_WHL_SIZE_BYTES=$(stat -c%s "$HA_CORE_WHL_PATH")
+                # 预期大小 (字节) - 假设是 100MB，换算成字节
+                # 请将 100 替换为你的大文件实际 MB 大小，并考虑稍微的浮动范围
+                MIN_EXPECTED_HA_WHL_SIZE_BYTES=$((100 * 1024 * 1024)) # 示例：100MB
+                
+                log_info "检查 Home Assistant 核心安装包 '$HA_CORE_WHL_PATH' 的大小..."
+                log_info "实际大小: $(($HA_CORE_WHL_SIZE_BYTES / (1024*1024))) MB, 预期最小大小: $(($MIN_EXPECTED_HA_WHL_SIZE_BYTES / (1024*1024))) MB。"
+
+                if [ "$HA_CORE_WHL_SIZE_BYTES" -lt "$MIN_EXPECTED_HA_WHL_SIZE_BYTES" ]; then
+                    log_error "错误：Home Assistant 核心安装包 '$HA_CORE_WHL_PATH' 大小 ($HA_CORE_WHL_SIZE_BYTES 字节) 小于预期最小大小 ($MIN_EXPECTED_HA_WHL_SIZE_BYTES 字节)。这表示大文件未完整下载。请检查 Git LFS 配置、网络连接或代理设置。"
+                else
+                    log_info "Home Assistant 核心安装包大小检查通过。"
+                fi
+            else
+                log_error "错误：本地 PIP 镜像目录 '$LOCAL_WHEEL_DIR' 中未找到 Home Assistant 版本 '$HA_VERSION_INNER' 的 .whl 文件。请确保已包含该包，且文件名符合 '$HA_CORE_WHL_FILENAME_PATTERN' 模式。"
+            fi
+        else
+            log_info "HA_VERSION 未指定，跳过特定 Home Assistant 核心 .whl 文件大小检查。"
+        fi
+    fi
+    # --- 增强的文件完整性检查结束 ---
 
 
+    # --- PIP 配置和本地镜像文件检查 ---
     if [ "$USE_LOCAL_PIP_MIRROR_INNER" = "true" ]; then
         log_info "正在配置 pip 使用本地镜像源: $HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_LOCAL_PIP_MIRROR_SUBDIR_INNER"
-        # 启用本地镜像时，禁用默认 PyPI 索引，强制只从本地查找
+        
         LOCAL_WHEEL_DIR="$HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_LOCAL_PIP_MIRROR_SUBDIR_INNER"
+        # 目录存在性已在 Git LFS 检查中隐式处理，但再次强调一下
         if [ ! -d "$LOCAL_WHEEL_DIR" ]; then
-            log_error "错误：启用了本地 PIP 镜像，但本地镜像目录 '$LOCAL_WHEEL_DIR' 不存在。请确保您已将 .whl 文件上传到您的 GitHub 仓库并克隆到正确位置。"
+             log_error "错误：启用了本地 PIP 镜像，但本地镜像目录 '$LOCAL_WHEEL_DIR' 不存在。这不应该发生，请检查之前的 Git 克隆步骤。"
         fi
+
+        log_info "检查本地 PIP 镜像中核心包的存在性..."
+        
+        # 检查 setuptools
+        if ! ls "$LOCAL_WHEEL_DIR"/setuptools-*.whl 1>/dev/null 2>&1; then
+            log_error "错误：本地 PIP 镜像目录 '$LOCAL_WHEEL_DIR' 中未找到 'setuptools' 的 .whl 文件。请确保已包含该包。"
+        fi
+        
+        # 检查 wheel
+        if ! ls "$LOCAL_WHEEL_DIR"/wheel-*.whl 1>/dev/null 2>&1; then
+            log_error "错误：本地 PIP 镜像目录 '$LOCAL_WHEEL_DIR' 中未找到 'wheel' 的 .whl 文件。请确保已包含该包。"
+        fi
+
+        # 检查 homeassistant (如果指定了固定版本) - 存在性检查，大小已在前面检查
+        if [ -n "$HA_VERSION_INNER" ]; then
+            HA_CORE_WHL_FILENAME_PATTERN="homeassistant-$HA_VERSION_INNER-*.whl"
+            if ! ls "$LOCAL_WHEEL_DIR"/$HA_CORE_WHL_FILENAME_PATTERN 1>/dev/null 2>&1; then
+                log_error "错误：本地 PIP 镜像目录 '$LOCAL_WHEEL_DIR' 中未找到 Home Assistant 版本 '$HA_VERSION_INNER' 的 .whl 文件。请确保已包含该包，且文件名符合 '$HA_CORE_WHL_FILENAME_PATTERN' 模式。"
+            fi
+        else
+            log_info "Home Assistant 将安装最新版，跳过特定版本 .whl 文件检查。但仍会检查是否存在任意 Home Assistant 包。"
+            if ! ls "$LOCAL_WHEEL_DIR"/homeassistant-*.whl 1>/dev/null 2>&1; then
+                log_error "错误：启用了本地 PIP 镜像，但本地镜像目录 '$LOCAL_WHEEL_DIR' 中未找到任何 'homeassistant' 的 .whl 文件。请确保已包含该包。"
+            fi
+        fi
+
+        log_info "本地 PIP 镜像核心包检查通过。所有其他 Home Assistant 依赖包也必须存在于此目录。如果您在安装过程中遇到 '找不到满足要求的版本' 的错误，请仔细检查 '$LOCAL_WHEEL_DIR' 目录中的所有依赖 .whl 文件是否完整且正确。"
+        
         PIP_INSTALL_OPTS="--no-index --find-links=$LOCAL_WHEEL_DIR"
     else
         log_info "正在配置 pip 使用国内镜像源: $PIP_MIRROR_URL_INNER"
-        pip config set global.index-url "$PIP_MIRROR_URL_INNER" || log_error "无法设置 pip 镜像源。"
+        python3 -m pip config set global.index-url "$PIP_MIRROR_URL_INNER" || log_error "无法设置 pip 镜像源。"
         TRUSTED_HOST_INNER=$(echo "$PIP_MIRROR_URL_INNER" | sed -E 's/https?:\/\/(.*)\/simple.*/\1/')
-        pip config set global.trusted-host "$TRUSTED_HOST_INNER" || log_error "无法设置 pip trusted-host。"
+        python3 -m pip config set global.trusted-host "$TRUSTED_HOST_INNER" || log_error "无法设置 pip trusted-host。"
         PIP_INSTALL_OPTS="" # 无特殊选项，使用全局配置的 PyPI 镜像
     fi
     log_info "pip 配置完成。"
+    # --- PIP 配置和本地镜像文件检查结束 ---
 
     # 3.4 安装 Home Assistant 核心
     log_info "正在安装官方 Hass 核心..."
     # 优先安装 setuptools 和 wheel 以确保构建依赖正常
-    pip install --upgrade setuptools wheel $PIP_INSTALL_OPTS || log_error "无法升级 setuptools/wheel。"
+    python3 -m pip install --upgrade setuptools wheel $PIP_INSTALL_OPTS || log_error "无法升级 setuptools/wheel。请检查您的本地镜像文件是否损坏或缺失。"
     
     HA_INSTALL_TARGET="homeassistant"
     if [ -n "$HA_VERSION_INNER" ]; then
@@ -220,7 +346,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     fi
 
     # 使用 PIP_INSTALL_OPTS 来控制包源
-    pip install $PIP_INSTALL_OPTS "$HA_INSTALL_TARGET" || log_error "无法安装 Home Assistant '$HA_INSTALL_TARGET'。请检查网络连接、PyPI 镜像源/本地镜像内容、Python 开发文件 (python3-dev) 或编译工具 (build-essential)。"
+    python3 -m pip install $PIP_INSTALL_OPTS "$HA_INSTALL_TARGET" || log_error "无法安装 Home Assistant '$HA_INSTALL_TARGET'。请检查网络连接、PyPI 镜像源/本地镜像内容、Python 开发文件 (python3-dev) 或编译工具 (build-essential)。"
     log_info "官方 Home Assistant 核心安装成功。"
 
     # 新增步骤：预安装 Home Assistant 运行时可能需要的特定依赖
@@ -256,7 +382,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     for pkg in "${ADDITIONAL_PACKAGES[@]}"; do
         log_info "正在安装 $pkg..."
         # 同样使用 PIP_INSTALL_OPTS 来控制包源
-        pip install $PIP_INSTALL_OPTS "$pkg" || log_error "无法安装依赖包 '$pkg'。请检查网络连接、本地镜像内容或包名是否正确。"
+        python3 -m pip install $PIP_INSTALL_OPTS "$pkg" || log_error "无法安装依赖包 '$pkg'。请检查网络连接、本地镜像内容或包名是否正确。"
     done
     log_info "所有额外依赖预安装完成。"
 
@@ -271,11 +397,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     fi
     log_info "'hass' 可执行文件存在并有执行权限: $HASS_VENV_PATH_INNER"
 
-    # 3.6 克隆 ha-mirror 仓库 (用于获取自定义配置和本地 PIP 镜像)
-    # 此部分已上移到 pip 配置之前，以确保本地镜像目录可用
-    log_info "ha-mirror 仓库已克隆/更新。"
-
-    # 3.7 部署自定义配置和组件 (来自 ha-mirror 的 config 目录)
+    # 3.6 部署自定义配置和组件 (来自 ha-mirror 的 config 目录)
     log_info "正在部署自定义配置和组件到 Home Assistant 配置目录 '$HA_CONFIG_DIR_INNER'..."
     mkdir -p "$HA_CONFIG_DIR_INNER" || log_error "无法创建 Home Assistant 配置目录。"
     
@@ -286,7 +408,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     chown -R "$HA_USER_INNER":"$HA_USER_INNER" "$HA_CONFIG_DIR_INNER" || log_error "无法设置配置目录权限。"
     log_info "自定义配置和组件部署成功。"
 
-    # 3.8 验证配置 (可选，但强烈推荐)
+    # 3.7 验证配置 (可选，但强烈推荐)
     log_info "正在验证 Home Assistant 配置..."
     "$HASS_VENV_PATH_INNER" --script check_config -c "$HA_CONFIG_DIR_INNER" || {
         log_error "Home Assistant 配置验证失败。请检查配置错误。您可能需要手动检查日志。"
