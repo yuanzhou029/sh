@@ -12,7 +12,7 @@ HA_CONFIG_DIR="/home/$HA_USER/.homeassistant"
 #            如果您的 "url.yh-iot.cloudns.org" 是一个 GitHub 镜像，并且期望将原始 GitHub URL 作为其路径一部分，
 #            请将其修改为正确的镜像地址格式，例如：
 #            HA_MIRROR_REPO="https://url.yh-iot.cloudns.org/yuanzhou029/ha-mirror.git"
-HA_MIRROR_REPO="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/ha-mirror.git" # <--- **强烈建议使用原始 GitHub URL**
+HA_MIRROR_REPO="https://github.com/yuanzhou029/ha-mirror.git" # <--- **强烈建议使用原始 GitHub URL**
 
 # ha-mirror 仓库中包含 Home Assistant 配置文件的子目录名称
 HA_MIRROR_CONFIG_SUBDIR="config"
@@ -64,9 +64,10 @@ else
     log_info "PIP 将使用 PyPI 镜像源获取包。"
 fi
 
-# 0. 检查并安装必要工具 (python3-venv, git, build-essential, python3-dev)
-log_info "正在检查并安装必要的系统工具 (python3-venv, git, build-essential, python3-dev)..."
-REQUIRED_TOOLS=("python3-venv" "git" "build-essential" "python3-dev") # <-- 增加 python3-dev
+# 0. 检查并安装必要工具 (python3-venv, git, build-essential, python3-dev, git-lfs)
+log_info "正在检查并安装必要的系统工具 (python3-venv, git, build-essential, python3-dev, git-lfs)..."
+# 注意：git-lfs 的包名可能因发行版而异。在 Debian/Ubuntu 上是 git-lfs。
+REQUIRED_TOOLS=("python3-venv" "git" "build-essential" "python3-dev" "git-lfs") 
 for tool in "${REQUIRED_TOOLS[@]}"; do
     if ! dpkg -s "$tool" &>/dev/null; then # 适用于 Debian/Ubuntu
         log_info "$tool 未安装，正在尝试安装..."
@@ -188,29 +189,46 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     clone_or_pull_repo() {
         local attempt=1
         while [ $attempt -le $MAX_RETRIES ]; do
+            log_info "Git 操作尝试 $attempt/$MAX_RETRIES..."
+            local success=0
             if [ ! -d "$HA_MIRROR_REPO_PATH" ]; then
-                log_info "尝试克隆 ha-mirror 仓库 (尝试 $attempt/$MAX_RETRIES)..."
+                log_info "尝试克隆 ha-mirror 仓库..."
                 if git clone "$CLONE_URL_INNER" "$HA_MIRROR_REPO_PATH"; then
                     log_info "ha-mirror 仓库克隆成功。"
-                    return 0
+                    success=1
                 fi
             else
-                log_info "ha-mirror 仓库已存在，尝试执行 'git pull' 更新 (尝试 $attempt/$MAX_RETRIES)..."
+                log_info "ha-mirror 仓库已存在，尝试执行 'git pull' 更新。"
                 # 切换到仓库目录执行 pull
                 cd "$HA_MIRROR_REPO_PATH" || log_error "无法进入 $HA_MIRROR_REPO_PATH"
                 if git pull; then
                     log_info "ha-mirror 仓库更新成功。"
-                    cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
-                    return 0
+                    success=1
                 fi
                 cd "$HA_INSTALL_DIR_INNER" # 即使失败也要返回
             fi
 
-            log_info "Git 操作失败，将在 $RETRY_DELAY 秒后重试..."
+            if [ "$success" -eq 1 ]; then
+                # 在 Git clone/pull 成功后，初始化并拉取 Git LFS 文件
+                log_info "执行 Git LFS 初始化和拉取..."
+                # 先进入仓库目录
+                cd "$HA_MIRROR_REPO_PATH" || log_error "无法进入 $HA_MIRROR_REPO_PATH"
+                git lfs install || { log_error "Git LFS 安装失败。请确保 git-lfs 已正确安装。"; return 1; } # LFS install 只需运行一次
+                if git lfs pull; then
+                    log_info "Git LFS 文件拉取成功。"
+                    cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
+                    return 0 # Git 和 Git LFS 都成功
+                else
+                    log_info "Git LFS 文件拉取失败。可能网络不稳定或代理问题。将在 $RETRY_DELAY 秒后重试..."
+                    cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
+                fi
+            fi
+
+            log_info "Git 或 Git LFS 操作失败，将在 $RETRY_DELAY 秒后重试..."
             sleep $RETRY_DELAY
             attempt=$((attempt + 1))
         done
-        log_error "多次尝试后无法克隆或更新 ha-mirror 仓库。请检查 Git 代理或仓库地址、网络连接。"
+        log_error "多次尝试后无法克隆/更新 ha-mirror 仓库或拉取 Git LFS 文件。请检查 Git 代理、LFS 配置、仓库地址或网络连接。"
     }
 
     clone_or_pull_repo
@@ -221,24 +239,59 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         log_info "Git 代理环境变量已清除。"
     fi
 
-    # 增加一个对 ha-mirror 仓库目录大小的粗略检查
+    # --- 增强的文件完整性检查 ---
+    # 整体仓库大小的粗略检查 (你可能需要根据你的 GitHub 仓库的实际大小来调整这个值)
+    # 这个值应该能容纳除了那个100MB大文件之外的所有文件，或者所有文件都下载完整后的总大小。
+    MIN_EXPECTED_REPO_SIZE_MB=80 # 例如，如果你的100MB文件是HA核心，那么总大小应该在100MB以上
     REPO_SIZE_MB=$(du -sm "$HA_MIRROR_REPO_PATH" | awk '{print $1}')
-    # 您需要根据您 GitHub 仓库的实际大小来调整这个最小值 (例如，如果包含大文件，可能需要几百MB)
-    MIN_EXPECTED_REPO_SIZE_MB=50
-    if [ "$USE_LOCAL_PIP_MIRROR_INNER" = "true" ] && [ "$REPO_SIZE_MB" -lt "$MIN_EXPECTED_REPO_SIZE_MB" ]; then
+    if [ "$REPO_SIZE_MB" -lt "$MIN_EXPECTED_REPO_SIZE_MB" ]; then
         log_error "ha-mirror 仓库 ($REPO_SIZE_MB MB) 小于预期大小 ($MIN_EXPECTED_REPO_SIZE_MB MB)。可能未完全下载或内容不完整。请检查仓库内容并确保网络稳定。"
     else
-        log_info "ha-mirror 仓库大小检查通过 ($REPO_SIZE_MB MB)。"
+        log_info "ha-mirror 仓库整体大小检查通过 ($REPO_SIZE_MB MB)。"
     fi
-    # --- Git Clone/Pull 增强结束 ---
+
+    # 针对 100MB 大文件的特定检查
+    # 假设这个 100MB 文件是 homeassistant 核心的 .whl 文件
+    # 请根据你的实际情况调整文件名模式和预期大小！
+    if [ "$USE_LOCAL_PIP_MIRROR_INNER" = "true" ]; then
+        LOCAL_WHEEL_DIR="$HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_LOCAL_PIP_MIRROR_SUBDIR_INNER"
+        if [ -n "$HA_VERSION_INNER" ]; then
+            HA_CORE_WHL_FILENAME_PATTERN="homeassistant-$HA_VERSION_INNER-*.whl" # 例如：homeassistant-2026.2.3-py3-none-any.whl
+            HA_CORE_WHL_PATH=$(find "$LOCAL_WHEEL_DIR" -maxdepth 1 -name "$HA_CORE_WHL_FILENAME_PATTERN" -print -quit)
+            
+            if [ -f "$HA_CORE_WHL_PATH" ]; then
+                # 获取文件大小 (字节)
+                HA_CORE_WHL_SIZE_BYTES=$(stat -c%s "$HA_CORE_WHL_PATH")
+                # 预期大小 (字节) - 假设是 100MB，换算成字节
+                # 请将 100 替换为你的大文件实际 MB 大小，并考虑稍微的浮动范围
+                MIN_EXPECTED_HA_WHL_SIZE_BYTES=$((100 * 1024 * 1024)) # 示例：100MB
+                
+                log_info "检查 Home Assistant 核心安装包 '$HA_CORE_WHL_PATH' 的大小..."
+                log_info "实际大小: $(($HA_CORE_WHL_SIZE_BYTES / (1024*1024))) MB, 预期最小大小: $(($MIN_EXPECTED_HA_WHL_SIZE_BYTES / (1024*1024))) MB。"
+
+                if [ "$HA_CORE_WHL_SIZE_BYTES" -lt "$MIN_EXPECTED_HA_WHL_SIZE_BYTES" ]; then
+                    log_error "错误：Home Assistant 核心安装包 '$HA_CORE_WHL_PATH' 大小 ($HA_CORE_WHL_SIZE_BYTES 字节) 小于预期最小大小 ($MIN_EXPECTED_HA_WHL_SIZE_BYTES 字节)。这表示大文件未完整下载。请检查 Git LFS 配置、网络连接或代理设置。"
+                else
+                    log_info "Home Assistant 核心安装包大小检查通过。"
+                fi
+            else
+                log_error "错误：本地 PIP 镜像目录 '$LOCAL_WHEEL_DIR' 中未找到 Home Assistant 版本 '$HA_VERSION_INNER' 的 .whl 文件。请确保已包含该包，且文件名符合 '$HA_CORE_WHL_FILENAME_PATTERN' 模式。"
+            fi
+        else
+            log_info "HA_VERSION 未指定，跳过特定 Home Assistant 核心 .whl 文件大小检查。"
+        fi
+    fi
+    # --- 增强的文件完整性检查结束 ---
+
 
     # --- PIP 配置和本地镜像文件检查 ---
     if [ "$USE_LOCAL_PIP_MIRROR_INNER" = "true" ]; then
         log_info "正在配置 pip 使用本地镜像源: $HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_LOCAL_PIP_MIRROR_SUBDIR_INNER"
         
         LOCAL_WHEEL_DIR="$HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_LOCAL_PIP_MIRROR_SUBDIR_INNER"
+        # 目录存在性已在 Git LFS 检查中隐式处理，但再次强调一下
         if [ ! -d "$LOCAL_WHEEL_DIR" ]; then
-            log_error "错误：启用了本地 PIP 镜像，但本地镜像目录 '$LOCAL_WHEEL_DIR' 不存在。请确保您已将 .whl 文件上传到您的 GitHub 仓库并克隆到正确位置。"
+             log_error "错误：启用了本地 PIP 镜像，但本地镜像目录 '$LOCAL_WHEEL_DIR' 不存在。这不应该发生，请检查之前的 Git 克隆步骤。"
         fi
 
         log_info "检查本地 PIP 镜像中核心包的存在性..."
@@ -253,11 +306,11 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
             log_error "错误：本地 PIP 镜像目录 '$LOCAL_WHEEL_DIR' 中未找到 'wheel' 的 .whl 文件。请确保已包含该包。"
         fi
 
-        # 检查 homeassistant (如果指定了固定版本)
+        # 检查 homeassistant (如果指定了固定版本) - 存在性检查，大小已在前面检查
         if [ -n "$HA_VERSION_INNER" ]; then
-            HA_CORE_WHL_PATTERN="homeassistant-$HA_VERSION_INNER-*.whl"
-            if ! ls "$LOCAL_WHEEL_DIR"/$HA_CORE_WHL_PATTERN 1>/dev/null 2>&1; then
-                log_error "错误：本地 PIP 镜像目录 '$LOCAL_WHEEL_DIR' 中未找到 Home Assistant 版本 '$HA_VERSION_INNER' 的 .whl 文件。请确保已包含该包，且文件名符合 '$HA_CORE_WHL_PATTERN' 模式。"
+            HA_CORE_WHL_FILENAME_PATTERN="homeassistant-$HA_VERSION_INNER-*.whl"
+            if ! ls "$LOCAL_WHEEL_DIR"/$HA_CORE_WHL_FILENAME_PATTERN 1>/dev/null 2>&1; then
+                log_error "错误：本地 PIP 镜像目录 '$LOCAL_WHEEL_DIR' 中未找到 Home Assistant 版本 '$HA_VERSION_INNER' 的 .whl 文件。请确保已包含该包，且文件名符合 '$HA_CORE_WHL_FILENAME_PATTERN' 模式。"
             fi
         else
             log_info "Home Assistant 将安装最新版，跳过特定版本 .whl 文件检查。但仍会检查是否存在任意 Home Assistant 包。"
