@@ -158,9 +158,9 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
 
     # 3.3 配置 pip 使用国内镜像源
     log_info "正在配置 pip 使用国内镜像源: $PIP_MIRROR_URL_INNER"
-    pip config set global.index-url "$PIP_MIRROR_URL_INNER" || log_error "无法设置 pip 镜像源。"
     # 提取域名作为 trusted-host
     TRUSTED_HOST_INNER=$(echo "$PIP_MIRROR_URL_INNER" | sed -E 's/https?:\/\/(.*)\/simple.*/\1/')
+    pip config set global.index-url "$PIP_MIRROR_URL_INNER" || log_error "无法设置 pip 镜像源。"
     pip config set global.trusted-host "$TRUSTED_HOST_INNER" || log_error "无法设置 pip trusted-host。"
     log_info "pip 配置完成。"
 
@@ -218,6 +218,13 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "自定义配置和组件部署成功。"
 
     # 3.8 验证配置 (可选，但强烈推荐)
+    # 关键修改：在执行 check_config 前，设置 PIP_INDEX_URL 和 PIP_TRUSTED_HOST 环境变量
+    log_info "正在为 Home Assistant 内部包安装设置环境变量镜像源..."
+    export PIP_INDEX_URL="$PIP_MIRROR_URL_INNER"
+    export PIP_TRUSTED_HOST="$TRUSTED_HOST_INNER"
+    log_info "PIP_INDEX_URL=${PIP_INDEX_URL}"
+    log_info "PIP_TRUSTED_HOST=${PIP_TRUSTED_HOST}"
+    
     log_info "正在验证 Home Assistant 配置..."
     "$HASS_VENV_PATH_INNER" --script check_config -c "$HA_CONFIG_DIR_INNER" || {
         log_error "Home Assistant 配置验证失败。请检查配置错误。您可能需要手动检查日志。"
