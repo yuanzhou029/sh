@@ -29,7 +29,7 @@ echo 'sources.list 修改完成。'
 # 更新包列表并安装sudo
 apt update && apt install -y sudo
 # 将hass用户添加到sudo组
-# export PATH=\$PATH:/usr/sbin:/sbin:/usr/local/sbin
+export PATH=\$PATH:/usr/sbin:/sbin:/usr/local/sbin
 # 你的原始脚本中 usermod 被注释掉了，如果需要执行请取消注释
 sudo usermod -aG sudo $HASS_USERNAME
 echo 'sudo已安装 hass已经加入sudo组'
