@@ -158,20 +158,43 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
 
     # 3.3 配置 pip 使用国内镜像源
     log_info "正在配置 pip 使用国内镜像源: $PIP_MIRROR_URL_INNER"
-    # *** 关键修正：修正 TRUSTED_HOST_INNER 提取方式，只获取域名 ***
-    # 使用sed确保只提取域名，例如从 https://repo.huaweicloud.com/repository/pypi/simple 中提取 repo.huaweicloud.com
-    TRUSTED_HOST_INNER=$(echo "$PIP_MIRROR_URL_INNER" | sed -E 's/^https?:\/\/([^\/]+).*$/\1/')
     pip config set global.index-url "$PIP_MIRROR_URL_INNER" || log_error "无法设置 pip 镜像源。"
+    # 提取域名作为 trusted-host
+    TRUSTED_HOST_INNER=$(echo "$PIP_MIRROR_URL_INNER" | sed -E 's/https?:\/\/(.*)\/simple.*/\1/')
     pip config set global.trusted-host "$TRUSTED_HOST_INNER" || log_error "无法设置 pip trusted-host。"
-    log_info "pip 配置完成。修正后的 Trusted Host: $TRUSTED_HOST_INNER"
+    log_info "pip 配置完成。"
 
-
-    # 3.4 安装 Home Assistant
+    # 3.4 安装 Home Assistant 核心
     log_info "正在安装官方 Hass 核心..."
-    # 优先安装 setuptools 和 wheel 以确保构建依赖正
+    # 优先安装 setuptools 和 wheel 以确保构建依赖正常
     pip install --upgrade setuptools wheel || log_error "无法升级 setuptools/wheel。"
-    pip install homeassistant || log_error "无法安装 Home Assistant。请检查网络连接、PyPI 镜像源、Python 开发头文件 (python3-dev) 或编译工具 (build-essential)。"
+    pip install homeassistant || log_error "无法安装 Home Assistant。请检查网络连接、PyPI 镜像源、Python 开发文件 (python3-dev) 或编译工具 (build-essential)。"
     log_info "官方 Home Assistant 核心安装成功。"
+
+    # 新增步骤：预安装 Home Assistant 运行时可能需要的特定依赖
+    log_info "正在预安装 Home Assistant 配置验证时可能需要的额外依赖..."
+    ADDITIONAL_PACKAGES=(
+        "colorlog==6.10.1"
+        "home-assistant-frontend==20260128.6"
+        "pymicro-vad==1.0.1"
+        "pyspeex-noise==1.0.2"
+        "mutagen==1.47.0"
+        "ha-ffmpeg==3.2.2"
+        "hassil==3.5.0"
+        "home-assistant-intents==2026.1.28"
+        "PyTurboJPEG==1.8.0"
+        "av==16.0.1"
+        "go2rtc-client==0.4.0"
+        "PyNaCl==1.6.2"
+        "openai==2.15.0"
+    )
+    
+    for pkg in "${ADDITIONAL_PACKAGES[@]}"; do
+        log_info "正在安装 $pkg..."
+        pip install "$pkg" || log_error "无法安装依赖包 '$pkg'。请检查网络连接或包名是否正确。"
+    done
+    log_info "所有额外依赖预安装完成。"
+
 
     # 3.5 验证 hass 脚本是否存在和可执行
     HASS_VENV_PATH_INNER="$HA_INSTALL_DIR_INNER/bin/hass"
@@ -181,7 +204,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     if [ ! -x "$HASS_VENV_PATH_INNER" ]; then
         log_error "错误：Home Assistant 的 'hass' 可执行文件在 '$HASS_VENV_PATH_INNER' 没有执行权限。"
     fi
-    log_info "'hass' 可执行文件存在并有执行权限: $HASS_VENV_PATH_PATH_INNER" # 小改动，确保HA_INSTALL_DIR_INNER在PATH中
+    log_info "'hass' 可执行文件存在并有执行权限: $HASS_VENV_PATH_INNER"
 
     # 3.6 克隆 ha-mirror 仓库 (用于获取自定义配置)
     log_info "正在克隆或更新 ha-mirror 仓库到 '$HA_INSTALL_DIR_INNER/ha-mirror-repo'..."
@@ -218,7 +241,8 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 确保配置目录的权限正确
     chown -R "$HA_USER_INNER":"$HA_USER_INNER" "$HA_CONFIG_DIR_INNER" || log_error "无法设置配置目录权限。"
     log_info "自定义配置和组件部署成功。"
-    
+
+    # 3.8 验证配置 (可选，但强烈推荐)
     log_info "正在验证 Home Assistant 配置..."
     "$HASS_VENV_PATH_INNER" --script check_config -c "$HA_CONFIG_DIR_INNER" || {
         log_error "Home Assistant 配置验证失败。请检查配置错误。您可能需要手动检查日志。"
