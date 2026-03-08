@@ -158,16 +158,17 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
 
     # 3.3 配置 pip 使用国内镜像源
     log_info "正在配置 pip 使用国内镜像源: $PIP_MIRROR_URL_INNER"
-    # 修正 TRUSTED_HOST_INNER 提取方式，只获取域名
-    TRUSTED_HOST_INNER=$(echo "$PIP_MIRROR_URL_INNER" | sed -E 's/https?:\/\/(.*?)(\/|$).*/\1/')
+    # *** 关键修正：修正 TRUSTED_HOST_INNER 提取方式，只获取域名 ***
+    # 使用sed确保只提取域名，例如从 https://repo.huaweicloud.com/repository/pypi/simple 中提取 repo.huaweicloud.com
+    TRUSTED_HOST_INNER=$(echo "$PIP_MIRROR_URL_INNER" | sed -E 's/^https?:\/\/([^\/]+).*$/\1/')
     pip config set global.index-url "$PIP_MIRROR_URL_INNER" || log_error "无法设置 pip 镜像源。"
     pip config set global.trusted-host "$TRUSTED_HOST_INNER" || log_error "无法设置 pip trusted-host。"
-    log_info "pip 配置完成。Trusted Host: $TRUSTED_HOST_INNER"
+    log_info "pip 配置完成。修正后的 Trusted Host: $TRUSTED_HOST_INNER"
 
 
     # 3.4 安装 Home Assistant
     log_info "正在安装官方 Hass 核心..."
-    # 优先安装 setuptools 和 wheel 以确保构建依赖正常
+    # 优先安装 setuptools 和 wheel 以确保构建依赖正
     pip install --upgrade setuptools wheel || log_error "无法升级 setuptools/wheel。"
     pip install homeassistant || log_error "无法安装 Home Assistant。请检查网络连接、PyPI 镜像源、Python 开发头文件 (python3-dev) 或编译工具 (build-essential)。"
     log_info "官方 Home Assistant 核心安装成功。"
@@ -180,7 +181,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     if [ ! -x "$HASS_VENV_PATH_INNER" ]; then
         log_error "错误：Home Assistant 的 'hass' 可执行文件在 '$HASS_VENV_PATH_INNER' 没有执行权限。"
     fi
-    log_info "'hass' 可执行文件存在并有执行权限: $HASS_VENV_PATH_INNER"
+    log_info "'hass' 可执行文件存在并有执行权限: $HASS_VENV_PATH_PATH_INNER" # 小改动，确保HA_INSTALL_DIR_INNER在PATH中
 
     # 3.6 克隆 ha-mirror 仓库 (用于获取自定义配置)
     log_info "正在克隆或更新 ha-mirror 仓库到 '$HA_INSTALL_DIR_INNER/ha-mirror-repo'..."
@@ -222,8 +223,10 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 关键修改：在执行 check_config 前，设置 PIP_INDEX_URL 和 PIP_TRUSTED_HOST 环境变量
     log_info "--- DEBUG INFO FOR check_config ---"
     log_info "正在为 Home Assistant 内部包安装设置环境变量镜像源..."
+    # 再次计算正确的 trusted host，因为这里是用于导出的环境变量
+    TRUSTED_HOST_FOR_ENV=$(echo "$PIP_MIRROR_URL_INNER" | sed -E 's/^https?:\/\/([^\/]+).*$/\1/')
     export PIP_INDEX_URL="$PIP_MIRROR_URL_INNER"
-    export PIP_TRUSTED_HOST="$TRUSTED_HOST_INNER"
+    export PIP_TRUSTED_HOST="$TRUSTED_HOST_FOR_ENV" # 使用修正后的值
     log_info "Current PIP_INDEX_URL env var: ${PIP_INDEX_URL}"
     log_info "Current PIP_TRUSTED_HOST env var: ${PIP_TRUSTED_HOST}"
     log_info "Running 'env | grep PIP_' inside HA_USER script:"
