@@ -187,6 +187,17 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "go2rtc-client==0.4.0"
         "PyNaCl==1.6.2"
         "openai==2.15.0"
+        "RestrictedPython==8.1"
+        "numpy==2.3.2"
+        "bleak-retry-connector==4.4.3"
+        "habluetooth==5.8.0"
+        "aiousbwatcher==1.1.1"
+        "pyserial==3.5"
+        "python-matter-server==8.1.2"
+        "aiodhcpwatcher==1.2.1"
+        "aiodiscover==2.7.1"
+        "file-read-backwards==2.0.0"
+        "async-upnp-client==0.46.2"
     )
     
     for pkg in "${ADDITIONAL_PACKAGES[@]}"; do
