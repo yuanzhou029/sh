@@ -22,7 +22,7 @@ HA_VERSION="2026.2.3" # <--- **** 请在这里指定您需要的 Home Assistant 
 # 如果设置为 "true"，脚本将尝试从 HA_MIRROR_REPO_INNER/HA_LOCAL_PIP_MIRROR_SUBDIR_INNER 路径安装所有包。
 # 这要求您已手动将所有 Home Assistant 及其依赖的 .whl 文件下载并上传到该 GitHub 仓库子目录。
 # 如果设置为 "false"，脚本将使用 PIP_MIRROR_URL 进行安装。
-USE_LOCAL_PIP_MIRROR="false" # <--- **根据您的需求设置 "true" 或 "false"**
+USE_LOCAL_PIP_MIRROR="true" # <--- **根据您的需求设置 "true" 或 "false"**
 
 # 如果 USE_LOCAL_PIP_MIRROR 为 "true"，此变量指定您的 ha-mirror 仓库中存放 .whl 文件的子目录。
 HA_LOCAL_PIP_MIRROR_SUBDIR="pypi_packages" # <--- **请确保此目录在您的 Git 仓库中存在且包含所有 .whl 文件**
