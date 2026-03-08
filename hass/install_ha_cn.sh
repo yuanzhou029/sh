@@ -8,7 +8,7 @@ HA_INSTALL_DIR="/srv/$HA_USER"
 # Home Assistant 的配置目录 (通常是 ~/.homeassistant，我们会使用这个)
 HA_CONFIG_DIR="/home/$HA_USER/.homeassistant"
 # 您的 ha-mirror 仓库的 Git URL
-HA_MIRROR_REPO="https://pxy.140407.xyz/https://github.com/yuanzhou029/ha-mirror.git" # <--- **请务必将此替换为您的实际 GitHub 仓库 URL**
+HA_MIRROR_REPO="https://github.com/yuanzhou029/ha-mirror.git" # <--- **请务必将此替换为您的实际 GitHub 仓库 URL**
 # ha-mirror 仓库中包含 Home Assistant 配置文件的子目录名称
 HA_MIRROR_CONFIG_SUBDIR="config"
 
