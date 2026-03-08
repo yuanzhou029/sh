@@ -198,6 +198,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "aiodiscover==2.7.1"
         "file-read-backwards==2.0.0"
         "async-upnp-client==0.46.2"
+        "bluetooth-adapters==2.1.0"
     )
     
     for pkg in "${ADDITIONAL_PACKAGES[@]}"; do
