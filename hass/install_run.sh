@@ -35,9 +35,9 @@ sudo usermod -aG sudo $HASS_USERNAME
 echo 'sudo已安装 hass已经加入sudo组'
 
 # 以下是原始脚本的后续操作
-wget -O install_ha_cn.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/install_ha_cn.sh && chmod +x install_ha_cn.sh && bash install_ha_cn.sh
-wget -O set_static_ip.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/set_static_ip.sh && chmod +x set_static_ip.sh && bash set_static_ip.sh
-rm -f set_static_ip.sh
-rm -f install_run.sh
-rm -f install_ha_cn.sh
+wget -O 1.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/1.sh && chmod +x 1.sh && bash 1.sh
+#wget -O set_static_ip.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/set_static_ip.sh && chmod +x set_static_ip.sh && bash set_static_ip.sh
+#rm -f set_static_ip.sh
+#rm -f install_run.sh
+#rm -f install_ha_cn.sh
 "
