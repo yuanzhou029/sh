@@ -164,12 +164,49 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     pip config set global.trusted-host "$TRUSTED_HOST_INNER" || log_error "无法设置 pip trusted-host。"
     log_info "pip 配置完成。"
 
-    # 3.4 安装 Home Assistant
+    # 3.4 安装 Home Assistant 核心
     log_info "正在安装官方 Hass 核心..."
     # 优先安装 setuptools 和 wheel 以确保构建依赖正常
     pip install --upgrade setuptools wheel || log_error "无法升级 setuptools/wheel。"
-    pip install homeassistant || log_error "无法安装 Home Assistant。请检查网络连接、PyPI 镜像源、Python 开发头文件 (python3-dev) 或编译工具 (build-essential)。"
+    pip install homeassistant || log_error "无法安装 Home Assistant。请检查网络连接、PyPI 镜像源、Python 开发文件 (python3-dev) 或编译工具 (build-essential)。"
     log_info "官方 Home Assistant 核心安装成功。"
+
+    # 新增步骤：预安装 Home Assistant 运行时可能需要的特定依赖
+    log_info "正在预安装 Home Assistant 配置验证时可能需要的额外依赖..."
+    ADDITIONAL_PACKAGES=(
+        "colorlog==6.10.1"
+        "home-assistant-frontend==20260128.6"
+        "pymicro-vad==1.0.1"
+        "pyspeex-noise==1.0.2"
+        "mutagen==1.47.0"
+        "ha-ffmpeg==3.2.2"
+        "hassil==3.5.0"
+        "home-assistant-intents==2026.1.28"
+        "PyTurboJPEG==1.8.0"
+        "av==16.0.1"
+        "go2rtc-client==0.4.0"
+        "PyNaCl==1.6.2"
+        "openai==2.15.0"
+        "RestrictedPython==8.1"
+        "numpy==2.3.2"
+        "bleak-retry-connector==4.4.3"
+        "habluetooth==5.8.0"
+        "aiousbwatcher==1.1.1"
+        "pyserial==3.5"
+        "python-matter-server==8.1.2"
+        "aiodhcpwatcher==1.2.1"
+        "aiodiscover==2.7.1"
+        "file-read-backwards==2.0.0"
+        "async-upnp-client==0.46.2"
+        "bluetooth-adapters==2.1.0"
+    )
+    
+    for pkg in "${ADDITIONAL_PACKAGES[@]}"; do
+        log_info "正在安装 $pkg..."
+        pip install "$pkg" || log_error "无法安装依赖包 '$pkg'。请检查网络连接或包名是否正确。"
+    done
+    log_info "所有额外依赖预安装完成。"
+
 
     # 3.5 验证 hass 脚本是否存在和可执行
     HASS_VENV_PATH_INNER="$HA_INSTALL_DIR_INNER/bin/hass"
