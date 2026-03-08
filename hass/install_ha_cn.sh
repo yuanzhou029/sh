@@ -164,7 +164,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # pip config set 动作要放在 git clone 之后或者先设置好，然后根据 USE_LOCAL_PIP_MIRROR_INNER 来使用
     
     # 我们先克隆仓库，确保本地镜像文件存在
-    log_info "正在克隆或更新 ha-mirror 仓库到 '$HA_INSTALL_DIR_INNER/ha-mirror-repo'..."
+    log_info "正在更新 ha-mirror 仓库到 '$HA_INSTALL_DIR_INNER/ha-mirror-repo'..."
     CLONE_URL_INNER="$HA_MIRROR_REPO_INNER"
 
     if [ -n "$GIT_PROXY_INNER" ]; then
@@ -206,25 +206,25 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     fi
     log_info "pip 配置完成。"
 
-    # 3.4 安装 Home Assistant 核心
-    log_info "正在安装官方 Hass 核心..."
+    # 3.4 安装 控制 核心
+    log_info "正在安装控制 核心依赖文件..."
     # 优先安装 setuptools 和 wheel 以确保构建依赖正常
     pip install --upgrade setuptools wheel $PIP_INSTALL_OPTS || log_error "无法升级 setuptools/wheel。"
     
     HA_INSTALL_TARGET="homeassistant"
     if [ -n "$HA_VERSION_INNER" ]; then
         HA_INSTALL_TARGET="homeassistant==$HA_VERSION_INNER"
-        log_info "正在安装 Home Assistant 固定版本: $HA_INSTALL_TARGET"
+        log_info "正在安装 2026.2.3 固定版本: $HA_INSTALL_TARGET"
     else
-        log_info "HA_VERSION 未指定，正在安装 Home Assistant 最新版本。"
+        log_info "HA_VERSION 未指定，正在安装  最新版本。"
     fi
 
     # 使用 PIP_INSTALL_OPTS 来控制包源
-    pip install $PIP_INSTALL_OPTS "$HA_INSTALL_TARGET" || log_error "无法安装 Home Assistant '$HA_INSTALL_TARGET'。请检查网络连接、PyPI 镜像源/本地镜像内容、Python 开发文件 (python3-dev) 或编译工具 (build-essential)。"
+    pip install $PIP_INSTALL_OPTS "$HA_INSTALL_TARGET" || log_error "无法安装 Hass '$HA_INSTALL_TARGET'。请检查网络连接、PyPI 镜像源/本地镜像内容、Python 开发文件 (python3-dev) 或编译工具 (build-essential)。"
     log_info "官方 Home Assistant 核心安装成功。"
 
     # 新增步骤：预安装 Home Assistant 运行时可能需要的特定依赖
-    log_info "正在预安装 Home Assistant 配置验证时可能需要的额外依赖..."
+    log_info "正在预安装 控制核心的 配置验证时可能需要的额外依赖..."
     ADDITIONAL_PACKAGES=(
         "colorlog==6.10.1"
         "home-assistant-frontend==20260128.6"
@@ -265,10 +265,10 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 3.5 验证 hass 脚本是否存在和可执行
     HASS_VENV_PATH_INNER="$HA_INSTALL_DIR_INNER/bin/hass"
     if [ ! -f "$HASS_VENV_PATH_INNER" ]; then
-        log_error "错误：Home Assistant 的 'hass' 可执行文件未找到于 '$HASS_VENV_PATH_INNER'。Home Assistant 可能安装失败。"
+        log_error "错误：Home  的 'hass' 可执行文件未找到于 '$HASS_VENV_PATH_INNER'。Home 可能安装失败。"
     fi
     if [ ! -x "$HASS_VENV_PATH_INNER" ]; then
-        log_error "错误：Home Assistant 的 'hass' 可执行文件在 '$HASS_VENV_PATH_INNER' 没有执行权限。"
+        log_error "错误：Home 的 'hass' 可执行文件在 '$HASS_VENV_PATH_INNER' 没有执行权限。"
     fi
     log_info "'hass' 可执行文件存在并有执行权限: $HASS_VENV_PATH_INNER"
 
@@ -288,14 +288,14 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "自定义配置和组件部署成功。"
 
     # 3.8 验证配置 (可选，但强烈推荐)
-    log_info "正在验证 Home Assistant 配置..."
+    log_info "正在验证 控制核心的配置文件及依赖文件......"
     "$HASS_VENV_PATH_INNER" --script check_config -c "$HA_CONFIG_DIR_INNER" || {
         log_error "Home Assistant 配置验证失败。请检查配置错误。您可能需要手动检查日志。"
     }
     log_info "Home Assistant 基础配置验证完成。"
 
     log_info "Home Assistant 安装和自定义配置部署完成！"
-    log_info "您可以现在激活虚拟环境并启动 Home Assistant： source $HA_INSTALL_DIR_INNER/bin/activate && $HASS_VENV_PATH_INNER -c $HA_CONFIG_DIR_INNER"
+    log_info "您可以现在激活虚拟环境并启动： source $HA_INSTALL_DIR_INNER/bin/activate && $HASS_VENV_PATH_INNER -c $HA_CONFIG_DIR_INNER"
 EOF_INNER_SCRIPT
 
 # 替换内部脚本中的占位符
@@ -323,7 +323,7 @@ sudo -u "$HA_USER" bash "$TEMP_HA_SCRIPT" || log_error "以用户 '$HA_USER' 执
 sudo rm -f "$TEMP_HA_SCRIPT"
 
 # 4. 创建 systemd 服务 (以便开机自启和方便管理)
-log_info "正在创建 systemd 服务以便 Home Assistant 开机自启..."
+log_info "正在创建 systemd 服务以便 开机自启..."
 SYSTEMD_SERVICE_FILE="/etc/systemd/system/homeassistant@.service"
 sudo bash -c "cat > '$SYSTEMD_SERVICE_FILE'" <<EOL
 [Unit]
@@ -345,7 +345,7 @@ sudo systemctl daemon-reload || log_error "无法重新加载 systemd daemon。"
 sudo systemctl enable homeassistant@"$HA_USER" || log_error "无法启用 Home Assistant systemd 服务。"
 sudo systemctl start homeassistant@"$HA_USER" || log_error "无法启动 Home Assistant systemd 服务。"
 
-log_info "Home Assistant systemd 服务已创建并启动。您可以使用 'sudo systemctl status homeassistant@$HA_USER' 查看状态。"
-log_info "整个 Home Assistant 环境已设置完毕，并应用了您的自定义配置。"
+log_info "hass systemd 服务已创建并启动。您可以使用 'sudo systemctl status homeassistant@$HA_USER' 查看状态。"
+log_info "整个 控制核心 环境已设置完毕，并应用了您的自定义配置。"
 log_info "首次启动可能需要一些时间来下载依赖和初始化。"
-log_info "您可以通过访问您服务器的 IP 地址:8123 来访问您的控制系统。"
+log_info "恭喜你已经安装成了"
