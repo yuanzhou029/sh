@@ -33,7 +33,9 @@ export PATH=\$PATH:/usr/sbin:/sbin:/usr/local/sbin
 # 你的原始脚本中 usermod 被注释掉了，如果需要执行请取消注释
 sudo usermod -aG sudo $HASS_USERNAME
 echo 'sudo已安装 hass已经加入sudo组'
+sudo apt install libpcap0.8 libpcap0.8-dev -y
 sudo apt install ffmpeg -y
+sudo apt install libturbojpeg0 -y
 
 # 以下是原始脚本的后续操作
 wget -O install_ha_cn.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/install_ha_cn.sh && chmod +x install_ha_cn.sh && bash install_ha_cn.sh
