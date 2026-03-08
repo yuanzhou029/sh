@@ -154,7 +154,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "官方 Home Assistant 核心安装成功。"
 
     # 3.5 验证 hass 脚本是否存在和可执行
-    HASS_VENV_PATH_INNER="$HA_INSTALL_DIR_INNER/bin/zych_ha"
+    HASS_VENV_PATH_INNER="$HA_INSTALL_DIR_INNER/bin/hass"
     if [ ! -f "$HASS_VENV_PATH_INNER" ]; then
         log_error "错误：Home Assistant 的 'hass' 可执行文件未找到于 '$HASS_VENV_PATH_INNER'。Home Assistant 可能安装失败。"
     fi
