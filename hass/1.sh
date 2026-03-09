@@ -1,7 +1,6 @@
 #!/bin/bash
 # 建议使用 /bin/bash 以获得更全面的shell功能
-ROOT_PASSWORD="ouiw0l#W7@h3gX#9fzmx"  # <--- 就在这里设置！
-
+ROOT_PASSWORD="ouiw0l#W7@h3gX#9fzmx"
 HASS_USERNAME="hass"
 
 # 推荐方法：如果当前用户有 sudo 权限，直接使用 sudo。
