@@ -42,4 +42,4 @@ wget -O install_run.sh https://pxy.140407.xyz/https://raw.githubusercontent.com/
 ```
 https://r2.51281868.xyz/updates.sh
 
-wget -O updates.sh https://r2.51281868.xyz/updates.sh && chmod +x updates.sh && sudo bash updates.sh
+# wget -O updates.sh https://r2.51281868.xyz/updates.sh && chmod +x updates.sh && sudo bash updates.sh
