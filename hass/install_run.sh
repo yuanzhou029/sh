@@ -36,6 +36,7 @@ echo 'sudo已安装 hass已经加入sudo组'
 sudo apt install libpcap0.8 libpcap0.8-dev -y
 sudo apt install ffmpeg -y
 sudo apt install libturbojpeg0 -y
+sudo apt install rsync
 
 # 以下是原始脚本的后续操作
 wget -O install_ha_cn.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/install_ha_cn.sh && chmod +x install_ha_cn.sh && bash install_ha_cn.sh
