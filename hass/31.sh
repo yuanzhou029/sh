@@ -2,7 +2,7 @@
 # 建议使用 /bin/bash 以获得更全面的shell功能
 
 
-ROOT_PASSWORD="ouiw0l#W7@h3gX#9fzmx" 
+ROOT_PASSWORD="yuanzhou,821009" 
 HASS_USERNAME="hass"
 
 
