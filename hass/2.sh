@@ -11,7 +11,7 @@ HASS_USERNAME="hass"
 
 # 设置在任何命令失败时立即退出脚本
 set -e
-
+su -c
 echo "=== 脚本开始执行 ==="
 
 # 检查当前 Debian 版本，避免混淆源
