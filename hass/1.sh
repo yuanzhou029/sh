@@ -48,8 +48,8 @@ echo 'sources.list 修改完成。'
 # --- 结束：修改更新源 ---
 
 echo '正在更新包列表并安装sudo...'
-sudo apt update
-sudo apt install -y sudo
+apt update
+apt install -y sudo
 
 # 检查 hass 用户是否存在，如果不存在则创建（可选，根据你的需求决定）
 if ! id "$HASS_USERNAME" >/dev/null 2>&1; then
