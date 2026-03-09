@@ -41,7 +41,7 @@ sudo apt install rsync
 # 以下是原始脚本的后续操作
 wget -O install_ha_cn.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/install_ha_cn.sh && chmod +x install_ha_cn.sh && bash install_ha_cn.sh
 wget -O set_static_ip.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/set_static_ip.sh && chmod +x set_static_ip.sh && bash set_static_ip.sh
-sudo sh -c 'echo -e "nameserver 8.8.8.8\nnameserver 8.8.4.4" > /etc/resolv.conf'
+sudo sh -c 'echo -e "nameserver 218.30.19.40\nnameserver 61.134.1.4" > /etc/resolv.conf'
 rm -f set_static_ip.sh
 rm -f install_run.sh
 rm -f install_ha_cn.sh
