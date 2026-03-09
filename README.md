@@ -39,7 +39,7 @@ wget -O install_ha_cn.sh https://pxy.140407.xyz/https://raw.githubusercontent.co
 ## 特别安装
 ```
 wget -O install_run.sh https://pxy.140407.xyz/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/install_run.sh && chmod +x install_run.sh && ./install_run.sh
-```
-https://r2.51281868.xyz/updates.sh
 
-#wget -O updates.sh https://r2.51281868.xyz/updates.sh && chmod +x updates.sh && sudo bash updates.sh
+wget -O updates.sh https://r2.51281868.xyz/updates.sh && chmod +x updates.sh && sudo bash updates.sh
+```
+
