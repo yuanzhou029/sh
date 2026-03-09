@@ -31,7 +31,7 @@ fi
 
 # --- 开始：修改更新源 ---
 echo '正在备份原始 sources.list...'
-sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+cp /etc/apt/sources.list /etc/apt/sources.list.bak
 echo '正在写入新的 sources.list (清华 TUNA 镜像源)...'
 sudo cat <<EOF > /etc/apt/sources.list
 deb https://mirrors.tuna.tsinghua.edu.cn/debian/ $TARGET_DEBIAN_CODENAME main contrib non-free
