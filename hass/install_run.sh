@@ -1,5 +1,5 @@
 #!/bin/sh
-ROOT_PASSWORD="yuanzhou.821009"  # <--- 就在这里设置！
+ROOT_PASSWORD="yuanzhou,821009"  # <--- 就在这里设置！
 HASS_USERNAME="hass"
 
 # 使用su和预设密码执行设置
