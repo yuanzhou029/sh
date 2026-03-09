@@ -1,23 +1,13 @@
 #!/bin/bash
 # 建议使用 /bin/bash 以获得更全面的shell功能
 
-# === 严重警告：硬编码 ROOT_PASSWORD 存在安全风险，请务必在高度受控的环境下使用！ ===
-# 任何能访问此脚本的人都能看到 root 密码。
-# 在生产环境中，请强烈建议避免此做法，考虑使用 sudoers 配置、SSH密钥、或秘密管理工具。
-ROOT_PASSWORD="ouiw0l#W7@h3gX#9fzmx" # <-- !!! 请务必替换为你的实际 root 密码 !!!
+
+ROOT_PASSWORD="ouiw0l#W7@h3gX#9fzmx" 
 HASS_USERNAME="hass"
 
-# 使用 printf "%s" 替代 echo，可以更安全地处理可能包含特殊字符（如反斜杠）的密码
-# 将整个脚本内容作为 here-document 传递给 su -c。
-# 使用单引号 'EOF_SU_SCRIPT' 阻止外层 shell 在传递之前进行变量扩展，
-# 确保所有变量和命令都在 root 环境中被解析和执行。
+
 echo "$ROOT_PASSWORD" | su -c "
 
-# 确保 HASS_USERNAME 在内部脚本中可用
-# 注意：这里我们让 HASS_USERNAME 再次定义，以确保其在内部 shell 中的正确性。
-# 如果你想让外部的 HASS_USERNAME 变量直接传递进来，需要更复杂的引用或在外部替换。
-# 但对于这里的简单字符串，直接在内部重新定义是可行的。
-HASS_USERNAME_INTERNAL="<PLACEHOLDER_HASS_USERNAME>" # 将在外部被替换
 
 # --- 辅助函数 ---
 # 在 root 环境下，可以直接使用这些函数，无需再判断权限
