@@ -1,8 +1,6 @@
 #!/bin/bash
 # 建议使用 /bin/bash 以获得更全面的shell功能
-
-# === 警告：请移除硬编码的 ROOT_PASSWORD！这会带来严重安全风险！ ===
-# ROOT_PASSWORD="yz,821009" # 请勿在生产环境中使用！
+ROOT_PASSWORD="ouiw0l#W7@h3gX#9fzmx"  # <--- 就在这里设置！
 
 HASS_USERNAME="hass"
 
@@ -11,7 +9,7 @@ HASS_USERNAME="hass"
 
 # 设置在任何命令失败时立即退出脚本
 set -e
-su -c
+echo "$ROOT_PASSWORD" | su -c "
 echo "=== 脚本开始执行 ==="
 
 # 检查当前 Debian 版本，避免混淆源
