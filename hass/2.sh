@@ -13,8 +13,6 @@ HASS_USERNAME="hass"
 # 确保所有变量和命令都在 root 环境中被解析和执行。
 echo "$ROOT_PASSWORD" | su -c "
 
-echo "=== 脚本开始执行 (Root 权限下) ==="
-
 # 确保 HASS_USERNAME 在内部脚本中可用
 # 注意：这里我们让 HASS_USERNAME 再次定义，以确保其在内部 shell 中的正确性。
 # 如果你想让外部的 HASS_USERNAME 变量直接传递进来，需要更复杂的引用或在外部替换。
