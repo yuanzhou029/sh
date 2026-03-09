@@ -35,21 +35,6 @@ warning_msg() {
     echo -e "\033[0;33mWARNING: $1\033[0m"
 }
 
-# 检查当前 Debian 版本，避免混淆源
-CURRENT_DEBIAN_CODENAME=$(lsb_release -cs 2>/dev/null)
-TARGET_DEBIAN_CODENAME="trixie" # 请确认这是否是你目标系统的版本
-
-if [ -z "$CURRENT_DEBIAN_CODENAME" ]; then
-    error_msg "无法检测当前 Debian 系统版本。请确保 lsb_release 命令可用，或手动设置 TARGET_DEBIAN_CODENAME。"
-fi
-
-if [ "$CURRENT_DEBIAN_CODENAME" != "$TARGET_DEBIAN_CODENAME" ]; then
-    error_msg "当前 Debian 系统版本 ($CURRENT_DEBIAN_CODENAME) 与脚本目标版本 ($TARGET_DEBIAN_CODENAME) 不符！" \
-              "继续执行可能会导致系统包管理器损坏。请手动检查并修改脚本中的 TARGET_DEBIAN_CODENAME，或在已知风险的情况下继续。"
-    # 由于是非交互式环境，不进行询问，直接报错退出。
-fi
-success_msg "Debian 系统版本检查通过: $CURRENT_DEBIAN_CODENAME。"
-
 # --- 开始：修改更新源 ---
 info_msg '正在备份原始 sources.list...'
 cp /etc/apt/sources.list /etc/apt/sources.list.bak
