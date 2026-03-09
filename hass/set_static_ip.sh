@@ -318,7 +318,6 @@ main() {
     echo ""
 
     # 9. 生成并应用新的配置
-    sudo sh -c 'echo "nameserver 218.30.19.40\nnameserver 61.134.1.4" > /etc/resolv.conf'
     info_msg "正在生成并应用新的静态 IP 配置到 '$CONFIG_FILE'..."
     local TEMP_CONFIG_FILE=$(mktemp) || error_msg "无法创建临时文件。"
 
@@ -329,7 +328,7 @@ main() {
 # 回环网络接口
 auto lo
 iface lo inet loopback
-
+sh -c 'echo "nameserver 218.30.19.40\nnameserver 61.134.1.4" > /etc/resolv.conf'
 # 主网络接口 - 由 $(basename "$0") 在 $(date) 配置
 auto $INTERFACE
 iface $INTERFACE inet static
