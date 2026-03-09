@@ -11,9 +11,7 @@ HASS_USERNAME="hass"
 # 将整个脚本内容作为 here-document 传递给 su -c。
 # 使用单引号 'EOF_SU_SCRIPT' 阻止外层 shell 在传递之前进行变量扩展，
 # 确保所有变量和命令都在 root 环境中被解析和执行。
-printf "%s" "$ROOT_PASSWORD" | su -c "$(cat <<'EOF_SU_SCRIPT'
-#!/bin/bash
-set -e # 确保内部脚本在任何命令失败时立即退出
+echo "$ROOT_PASSWORD" | su -c "
 
 echo "=== 脚本开始执行 (Root 权限下) ==="
 
