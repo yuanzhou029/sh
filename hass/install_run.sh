@@ -1,7 +1,4 @@
 #!/bin/sh
-# 简单自动化设置脚本
-# 功能：使用su root密码yz,821009，安装sudo，将hass用户添加到sudo组，
-#       然后退回hass用户根目录，使用sudo执行其他功能
 ROOT_PASSWORD="yz,821009"  # <--- 就在这里设置！
 HASS_USERNAME="hass"
 
