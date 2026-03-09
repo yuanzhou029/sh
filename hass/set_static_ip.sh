@@ -114,7 +114,7 @@ manage_dos2unix() {
         fi
     else
         info_msg "脚本 '$script_path' 已是 Unix (LF) 格式，无需转换。"
-    fi # <--- 修正：这里应该是 fi
+    fi
     echo ""
 }
 
@@ -186,6 +186,8 @@ get_current_network_config() {
 
     CURRENT_GATEWAY=$(ip route | grep "default via" | awk '{print $3}' | head -1)
     
+    # 脚本的这一部分通常用于读取当前的DNS，但我们将强制使用指定值
+    # 因此，此处的 CURRENT_DNS 变量不再用于 NEW_DNS 的赋值，而是直接由下方硬编码覆盖。
     local dns_found=""
     if [ -f /etc/resolv.conf ]; then
         # IPv4地址的正则表达式
@@ -204,9 +206,10 @@ get_current_network_config() {
         warning_msg "未能获取 '$interface' 的网关地址。"
     fi
     
+    # 虽然这里获取了 CURRENT_DNS，但它不会被用于 NEW_DNS 的生成，而是被指定的 DNS 覆盖。
     if [ -z "$dns_found" ]; then
         warning_msg "未能获取当前 IPv4 DNS 服务器信息。'/etc/resolv.conf' 可能由 'systemd-resolved' 或 'NetworkManager' 管理，或仅包含 IPv6 DNS。将使用通用默认值: 8.8.8.8 1.1.1.1"
-        CURRENT_DNS="8.8.8.8 1.1.1.1"
+        CURRENT_DNS="8.8.8.8 1.1.1.1" # 这里的赋值在新逻辑中会被覆盖，仅作参考。
     else
         CURRENT_DNS="$dns_found"
     fi
@@ -253,7 +256,7 @@ main() {
     echo "IP 地址:     ${CURRENT_IP:-未知}"
     echo "子网掩码:    ${CURRENT_NETMASK:-未知}"
     echo "网关:        ${CURRENT_GATEWAY:-未知}"
-    echo "DNS 服务器:  ${CURRENT_DNS:-未知}"
+    echo "DNS 服务器:  ${CURRENT_DNS:-未知}" # 这里显示的是获取到的，但下面会强制设置
     echo "-----------------------------------"
     echo ""
 
@@ -270,8 +273,10 @@ main() {
     local NEW_STATIC_IP=$(echo "$CURRENT_IP" | awk -F'.' '{print $1"."$2"."$3".254"}')
     local NEW_NETMASK="$CURRENT_NETMASK"
     local NEW_GATEWAY="$CURRENT_GATEWAY"
-    local NEW_DNS="$CURRENT_DNS"
-    #local NEW_DNS="218.30.19.40 61.134.1.4"
+    
+    # VVVVVVVV  这里是主要修改点之一：强制设置 NEW_DNS  VVVVVVVV
+    local NEW_DNS="218.30.19.40 61.134.1.4" # 根据用户要求，强制设置 DNS 服务器
+    # ^^^^^^^^  修改结束 ^^^^^^^^
 
 
     echo "--- 将要配置的静态 IP 信息 ($INTERFACE) ---"
@@ -328,7 +333,6 @@ main() {
 # 回环网络接口
 auto lo
 iface lo inet loopback
-sh -c 'echo "nameserver 218.30.19.40\nnameserver 61.134.1.4" > /etc/resolv.conf'
 # 主网络接口 - 由 $(basename "$0") 在 $(date) 配置
 auto $INTERFACE
 iface $INTERFACE inet static
@@ -356,12 +360,21 @@ EOF
     success_msg "网络服务已成功重启。"
     echo ""
 
+    # VVVVVVVV  这里是主要修改点之二：强制覆盖 /etc/resolv.conf  VVVVVVVV
+    info_msg "正在强制设置 /etc/resolv.conf 以确保指定 DNS 生效..."
+    sudo sh -c 'echo "nameserver 218.30.19.40\nnameserver 61.134.1.4" > /etc/resolv.conf'
+    success_msg "/etc/resolv.conf 已被更新。"
+    warning_msg "注意：此更改可能不是永久性的，因为 /etc/resolv.conf 可能由 'systemd-resolved' 或 'NetworkManager' 等服务动态管理和覆盖。"
+    echo ""
+    # ^^^^^^^^  修改结束 ^^^^^^^^
+
     # 11. 网络配置验证
     info_msg "正在验证网络配置..."
     sleep 3 # 给网络一些时间来完全启动
 
     local IP_ADDR_CHECK=$(ip -4 addr show "$INTERFACE" | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -1)
     local ROUTE_GATEWAY_CHECK=$(ip r | grep "default via" | awk '{print $3}' | head -1)
+    # 这里的 DNS_RESOLV_CHECK 将会读取到我们刚刚强制写入 /etc/resolv.conf 的内容
     local DNS_RESOLV_CHECK=$(grep -E '^nameserver' /etc/resolv.conf | awk '{print $2}' | xargs)
 
     echo "--- 网卡 '$INTERFACE' 当前网络状态 ---"
@@ -393,7 +406,7 @@ EOF
     if [ -n "$first_dns_expected" ] && ! echo "$DNS_RESOLV_CHECK" | grep -q "$first_dns_expected"; then
         warning_msg "预期 DNS 服务器 '$first_dns_expected' 未在 /etc/resolv.conf 中找到。这可能由 'systemd-resolved' 或 'NetworkManager' 等其他服务管理，并非直接由 interfaces 文件控制，但请确保网络工作正常。"
     else
-        success_msg "DNS 服务器验证成功 (或由其他服务管理，但已检测到)。"
+        success_msg "DNS 服务器验证成功。"
     fi
 
     if "$validation_successful"; then
