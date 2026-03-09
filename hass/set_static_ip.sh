@@ -1,20 +1,5 @@
 #!/bin/bash
 # vim: filetype=sh
-
-# ==============================================================================
-# 脚本名称: set_static_ip.sh
-# 描述: 为 Debian/Ubuntu 系统配置静态 IP 地址。
-#       通过修改 /etc/network/interfaces 文件实现。
-#       包含健全的错误处理、配置备份、接口预关闭、网络验证和智能IP生成功能。
-#       新增Sudo权限管理、dos2unix工具自动安装与脚本格式转换。
-# 作者: Gemini Assistant
-# 日期: 2023-10-27 (或当前日期)
-# 用法: ./set_static_ip.sh [网卡名称]
-#       - 如果不指定网卡名称，脚本将尝试自动检测主要网卡。
-# 示例: ./set_static_ip.sh          # 自动检测并配置
-#       ./set_static_ip.sh ens33    # 为 ens33 网卡配置
-# ==============================================================================
-
 # --- 配置常量 ---
 CONFIG_FILE="/etc/network/interfaces"
 BACKUP_DIR="/etc/network/interfaces.bak"
@@ -285,8 +270,8 @@ main() {
     local NEW_STATIC_IP=$(echo "$CURRENT_IP" | awk -F'.' '{print $1"."$2"."$3".254"}')
     local NEW_NETMASK="$CURRENT_NETMASK"
     local NEW_GATEWAY="$CURRENT_GATEWAY"
-    #local NEW_DNS="$CURRENT_DNS"
-    local NEW_DNS="218.30.19.40 61.134.1.4"
+    local NEW_DNS="$CURRENT_DNS"
+    #local NEW_DNS="218.30.19.40 61.134.1.4"
 
 
     echo "--- 将要配置的静态 IP 信息 ($INTERFACE) ---"
@@ -333,6 +318,7 @@ main() {
     echo ""
 
     # 9. 生成并应用新的配置
+    sudo sh -c 'echo "nameserver 218.30.19.40\nnameserver 61.134.1.4" > /etc/resolv.conf'
     info_msg "正在生成并应用新的静态 IP 配置到 '$CONFIG_FILE'..."
     local TEMP_CONFIG_FILE=$(mktemp) || error_msg "无法创建临时文件。"
 
