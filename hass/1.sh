@@ -36,22 +36,22 @@ warning_msg() {
 }
 
 # --- 开始：修改更新源 ---
-info_msg '正在备份原始 sources.list...'
+echo '正在备份原始 sources.list...'
 cp /etc/apt/sources.list /etc/apt/sources.list.bak
 
-info_msg '正在写入新的 sources.list (清华 TUNA 镜像源)...'
-# 注意这里使用 INNER_EOF 结束符，以避免与外部 here-document 的 EOF_SU_SCRIPT 冲突。
-# 且 INNER_EOF 是未加引号的，这样里面的变量 ${TARGET_DEBIAN_CODENAME} 会被内部 shell 正常扩展。
-cat <<INNER_EOF > /etc/apt/sources.list
-deb https://mirrors.tuna.tsinghua.edu.cn/debian/ ${TARGET_DEBIAN_CODENAME} main contrib non-free
-# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ ${TARGET_DEBIAN_CODENAME} main contrib non-free
-deb https://mirrors.tuna.tsinghua.edu.cn/debian/ ${TARGET_DEBIAN_CODENAME}-updates main contrib non-free
-# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian-security ${TARGET_DEBIAN_CODENAME}-security main contrib non-free
-# 对于 Debian Testing (${TARGET_DEBIAN_CODENAME})，不推荐 backports。如果你的确有额外需要，可以自行添加。
-# deb https://mirrors.tuna.tsinghua.edu.cn/debian/ ${TARGET_DEBIAN_CODENAME}-backports main contrib non-free
-# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ ${TARGET_DEBIAN_CODENAME}-backports main contrib non-free
-INNER_EOF
-success_msg 'sources.list 修改完成。'
+echo '正在写入新的 sources.list (清华 TUNA 镜像源)...'
+cat <<EOF > /etc/apt/sources.list
+deb https://mirrors.tuna.tsinghua.edu.cn/debian/ trixie main contrib non-free
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ trixie main contrib non-free
+deb https://mirrors.tuna.tsinghua.edu.cn/debian/ trixie-updates main contrib non-free
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ trixie-updates main contrib non-free
+deb https://mirrors.tuna.tsinghua.edu.cn/debian-security trixie-security main contrib non-free
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian-security trixie-security main contrib non-free
+# 对于 Debian Testing (trixie)，不推荐 backports。如果你的确有额外需要，可以自行添加。
+# deb https://mirrors.tuna.tsinghua.edu.cn/debian/ trixie-backports main contrib non-free
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ trixie-backports main contrib non-free
+EOF
+echo 'sources.list 修改完成。'
 # --- 结束：修改更新源 ---
 
 info_msg '正在更新包列表并安装sudo...'
