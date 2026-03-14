@@ -2,7 +2,7 @@
 
 # --- 配置参数 ---
 # Home Assistant 运行的用户
-HA_USER="zych_ha"
+HA_USER="hass"
 # Home Assistant 的安装目录 (虚拟环境将在此处创建)
 HA_INSTALL_DIR="/srv/$HA_USER"
 # Home Assistant 的配置目录 (通常是 ~/.homeassistant，我们会使用这个)
