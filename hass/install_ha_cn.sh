@@ -168,7 +168,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "正在安装官方 Hass 核心..."
     # 优先安装 setuptools 和 wheel 以确保构建依赖正常
     pip install --upgrade setuptools wheel || log_error "无法升级 setuptools/wheel。"
-    pip install homeassistant || log_error "无法安装 Home Assistant。请检查网络连接、PyPI 镜像源、Python 开发文件 (python3-dev) 或编译工具 (build-essential)。"
+    pip install xoai-core || log_error "无法安装 xoai-core。请检查网络连接、PyPI 镜像源、Python 开发文件 (python3-dev) 或编译工具 (build-essential)。"
     log_info "官方 Home Assistant 核心安装成功。"
 
     # 新增步骤：预安装 Home Assistant 运行时可能需要的特定依赖
