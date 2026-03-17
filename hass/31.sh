@@ -17,10 +17,8 @@ HA_MIRROR_CONFIG_SUBDIR="config"
 # 推荐使用清华大学或阿里云
 PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple" # <--- **您可以选择其他镜像源**
 
-# 这些镜像源可以显著加速 Python 包的下载和安装速度，特别是对于国内用户。
-
 # GitHub Actions artifacts 下载 URL
-HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/hass-core/releases/download/2026.3.17/homeassistant-complete-package.zip"
+HA_WHEEL_URL="https://github.com/yuanzhou029/hass-core/actions/runs/23180113364/artifacts/5958636539"
 
 # --- 函数定义 ---
 log_info() {
@@ -42,6 +40,22 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 log_info "正在开始 Hass 原生安装和自定义配置部署 (利用国内镜像)..."
+
+# 检查磁盘空间
+check_disk_space() {
+    local required_gb=${1:-2}  # 默认需要 2GB
+    local available_kb=$(df /tmp | tail -1 | awk '{print $4}')
+    local available_gb=$((available_kb / 1024 / 1024))
+    
+    log_info "当前可用磁盘空间: ${available_gb}GB (需要至少 ${required_gb}GB)"
+    
+    if [ $available_gb -lt $required_gb ]; then
+        log_error "磁盘空间不足！需要至少 ${required_gb}GB，当前只有 ${available_gb}GB。"
+    fi
+}
+
+log_info "正在检查磁盘空间..."
+check_disk_space 3  # 需要至少 3GB 空间
 
 # 0. 检查并安装必要工具 (python3-venv, git, build-essential, python3-dev, wget, unzip)
 log_info "正在检查并安装必要的系统工具 (python3-venv, git, build-essential, python3-dev, wget, unzip)..."
@@ -154,9 +168,19 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 3.4 下载并安装从 GitHub Actions 构建的 Home Assistant wheel
     log_info "正在从 GitHub Actions 下载 Home Assistant wheel 文件..."
     
-    # 创建临时目录用于下载和解压
-    TEMP_DOWNLOAD_DIR=$(mktemp -d)
+    # 使用 /tmp 目录，但确保有足够的空间
+    TEMP_DOWNLOAD_DIR="/tmp/ha_install_$$"
+    mkdir -p "$TEMP_DOWNLOAD_DIR"
     cd "$TEMP_DOWNLOAD_DIR"
+    
+    # 检查临时目录的可用空间
+    AVAILABLE_SPACE_KB=$(df "$TEMP_DOWNLOAD_DIR" | tail -1 | awk '{print $4}')
+    AVAILABLE_SPACE_GB=$((AVAILABLE_SPACE_KB / 1024 / 1024))
+    log_info "临时下载目录可用空间: ${AVAILABLE_SPACE_GB}GB"
+    
+    if [ $AVAILABLE_SPACE_GB -lt 2 ]; then
+        log_error "临时目录空间不足！需要至少 2GB，当前只有 ${AVAILABLE_SPACE_GB}GB。"
+    fi
     
     # 下载 zip 文件
     log_info "正在下载 wheel artifacts from: $HA_WHEEL_URL_INNER"
@@ -164,7 +188,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 解压 zip 文件
     log_info "正在解压 wheel artifacts..."
-    unzip homeassistant_artifacts.zip || log_error "无法解压 wheel 文件。"
+    unzip -q homeassistant_artifacts.zip || log_error "无法解压 wheel 文件。"
     
     # 查找 wheel 文件和 dependencies 目录
     WHEEL_FILE=$(find . -name "homeassistant-*.whl" | head -n 1)
@@ -188,9 +212,17 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 返回到虚拟环境目录
     cd "$HA_INSTALL_DIR_INNER"
     
-    # 复制 wheel 文件和依赖到虚拟环境目录
+    # 创建 dependencies 目录并复制文件
+    if [ ! -d "dependencies" ]; then
+        mkdir -p dependencies
+    fi
+    
+    # 复制 wheel 文件到虚拟环境目录
     cp "$TEMP_DOWNLOAD_DIR/$WHEEL_FILE" . || log_error "无法复制 wheel 文件。"
-    cp -r "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR" ./dependencies || log_error "无法复制 dependencies 目录。"
+    
+    # 复制 dependencies 目录中的文件（逐个复制以节省空间）
+    log_info "正在复制依赖文件..."
+    find "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR" -name "*.whl" -exec cp {} dependencies/ \;
     
     # 清理临时下载目录
     rm -rf "$TEMP_DOWNLOAD_DIR"
