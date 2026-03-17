@@ -73,7 +73,7 @@ check_disk_space 3 "/srv/zych_ha"  # 需要至少 3GB 空间
 
 # 0. 检查并安装必要工具
 log_info "正在检查并安装必要的系统工具 (python3-venv, git, build-essential, python3-dev, wget, unzip)..."
-REQUIRED_TOOLS=("python3-venv" "git" "build-essential" "python3-dev" "wget" "unzip")
+REQUIRED_TOOLS=("git" "build-essential" "python3-dev" "wget" "unzip")
 for tool in "${REQUIRED_TOOLS[@]}"; do
     if ! dpkg -s "$tool" &>/dev/null; then
         log_info "$tool 未安装，正在尝试安装..."
@@ -147,7 +147,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
 
     # 3.1 创建 Python 虚拟环境
     log_info "正在创建 Python 虚拟环境..."
-    python3 -m venv . || log_error "无法创建 Python 虚拟环境。"
+    python3.14 -m venv . || log_error "无法创建 Python 虚拟环境。"
     log_info "虚拟环境创建成功。"
 
     # 3.2 激活虚拟环境
