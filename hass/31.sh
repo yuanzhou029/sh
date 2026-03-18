@@ -246,7 +246,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "正在预安装 Home Assistant 配置验证时可能需要的额外依赖..."
     ADDITIONAL_PACKAGES=(
         "colorlog==6.10.1"
-        "home-assistant-frontend==20260315.1"
+        "xoai-frontend==20260315.1"
         "pymicro-vad==1.0.1"
         "pyspeex-noise==1.0.2"
         "mutagen==1.47.0"
