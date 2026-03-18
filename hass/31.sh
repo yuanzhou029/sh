@@ -270,6 +270,22 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "file-read-backwards==2.0.0"
         "async-upnp-client==0.46.2"
         "bluetooth-adapters==2.1.0"
+        "aiodns==4.0.0"
+        "aiogithubapi==26.0.0"
+        "aiohttp-asyncmdnsresolver==0.1.1"
+        "aiohttp-fast-zlib==0.3.0"
+        "aiohttp==3.13.3"
+        "aiohttp_cors==0.8.1"
+        "aiozoneinfo==0.2.3"
+        "annotatedyaml==1.0.2"
+        "astral==2.2"
+        "async-interrupt==1.2.2"
+        "atomicwrites-homeassistant==1.4.1"
+        "attrs==25.4.0"
+        "audioop-lts==0.2.1"
+        "awesomeversion==25.8.0"
+        "bcrypt==5.0.0"
+        "bleak-retry-connector==4.6.0"
     )
     
     for pkg in "${ADDITIONAL_PACKAGES[@]}"; do
