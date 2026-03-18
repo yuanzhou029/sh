@@ -252,7 +252,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "mutagen==1.47.0"
         "ha-ffmpeg==3.2.2"
         "hassil==3.5.0"
-        "home-assistant-intents==2026.1.28"
+        "home-assistant-intents==2026.3.3"
         "PyTurboJPEG==1.8.0"
         "av==16.0.1"
         "go2rtc-client==0.4.0"
@@ -286,6 +286,11 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "awesomeversion==25.8.0"
         "bcrypt==5.0.0"
         "bleak-retry-connector==4.6.0"
+        "openai==2.21.0"
+        "aiohasupervisor==0.4.1"
+        "matter-python-client==0.4.1"
+        "dbus-fast==3.1.2"
+        "habluetooth==5.10.2"
     )
     
     for pkg in "${ADDITIONAL_PACKAGES[@]}"; do
