@@ -10,40 +10,71 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}${BOLD}开始自动编译安装 Python 3.14.3${NC}"
 
+# 检测系统类型
+if command -v apt &> /dev/null; then
+    PKG_MANAGER="apt"
+elif command -v apk &> /dev/null; then
+    PKG_MANAGER="apk"
+else
+    echo -e "${RED}未找到支持的包管理器${NC}"
+    exit 1
+fi
+
+echo -e "${YELLOW}检测到包管理器: $PKG_MANAGER${NC}"
+
 # 步骤1: 更新系统
 echo -e "${YELLOW}步骤1: 更新系统...${NC}"
-sudo apt update
-sudo apt upgrade -y
+if [ "$PKG_MANAGER" = "apt" ]; then
+    sudo apt update
+    sudo apt upgrade -y
+elif [ "$PKG_MANAGER" = "apk" ]; then
+    sudo apk update
+    sudo apk upgrade
+fi
 
 # 步骤2: 安装构建工具
 echo -e "${YELLOW}步骤2: 安装构建工具...${NC}"
-sudo apt install -y build-essential checkinstall
+if [ "$PKG_MANAGER" = "apt" ]; then
+    sudo apt install -y build-essential checkinstall
+elif [ "$PKG_MANAGER" = "apk" ]; then
+    sudo apk add build-base
+fi
 
 # 步骤3: 安装依赖
 echo -e "${YELLOW}步骤3: 安装编译依赖...${NC}"
-sudo apt install -y libssl-dev zlib1g-dev libbz2-dev \
-libreadline-dev libsqlite3-dev wget curl llvm \
-libncurses5-dev libncursesw5-dev libffi-dev \
-liblzma-dev tk-dev libgdbm-dev libc6-dev \
-libdb-dev libexpat1-dev liblzma-dev zlib1g-dev \
-libssl-dev
+if [ "$PKG_MANAGER" = "apt" ]; then
+    sudo apt install -y libssl-dev zlib1g-dev libbz2-dev \
+    libreadline-dev libsqlite3-dev wget curl llvm \
+    libncurses5-dev libncursesw5-dev libffi-dev \
+    liblzma-dev tk-dev libgdbm-dev libc6-dev \
+    libdb-dev libexpat1-dev liblzma-dev zlib1g-dev \
+    libssl-dev
+elif [ "$PKG_MANAGER" = "apk" ]; then
+    sudo apk add openssl-dev zlib-dev bzip2-dev \
+    readline-dev sqlite-dev curl llvm \
+    ncurses-dev ncurses5-compat-libs ncursesw5-dev libffi-dev \
+    xz-dev tk-dev gdbm-dev musl-dev expat-dev xz-dev zlib-dev \
+    openssl-dev
+fi
 
 # 步骤4: 下载 Python 3.14.3 源码
 echo -e "${YELLOW}步骤4: 下载 Python 3.14.3 源码...${NC}"
-sudo wget https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/3.14.3/Python-3.14.3.tgz
+rm -f Python-3.14.3.tgz*
+sudo wget https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/3.14.3/Python-3.14.3.tgz -O Python-3.14.3.tgz
 
 # 步骤5: 解压源码包
 echo -e "${YELLOW}步骤5: 解压源码包...${NC}"
-sudo tar xzf Python-3.14.3.tgz
+rm -rf Python-3.14.3/
+tar xzf Python-3.14.3.tgz
 
 # 步骤6: 配置编译选项
 echo -e "${YELLOW}步骤6: 配置编译选项...${NC}"
 cd Python-3.14.3
-sudo ./configure --enable-optimizations
+./configure --enable-optimizations
 
 # 步骤7: 开始编译
 echo -e "${YELLOW}步骤7: 开始编译 Python (这可能需要较长时间)...${NC}"
-sudo make -j $(nproc)
+make -j $(nproc)
 
 # 步骤8: 安装 Python
 echo -e "${YELLOW}步骤8: 安装 Python...${NC}"
@@ -56,11 +87,20 @@ if command -v python3.14 &> /dev/null; then
     python3.14 --version
 else
     echo -e "${RED}Python 3.14.3 安装可能未成功${NC}"
+    # 尝试查找可能的可执行文件名
+    if command -v python3.14.3 &> /dev/null; then
+        echo -e "${GREEN}${BOLD}发现 python3.14.3 命令:${NC}"
+        python3.14.3 --version
+    elif command -v /usr/local/bin/python3.14 &> /dev/null; then
+        echo -e "${GREEN}${BOLD}发现 /usr/local/bin/python3.14 命令:${NC}"
+        /usr/local/bin/python3.14 --version
+    fi
     exit 1
 fi
 
 # 步骤10: 更新 pip
 echo -e "${YELLOW}步骤10: 更新 pip...${NC}"
+python3.14 -m ensurepip --upgrade
 python3.14 -m pip install --upgrade pip
 
 echo -e "${GREEN}${BOLD}Python 3.14.3 编译安装完成!${NC}"
