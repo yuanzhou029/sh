@@ -36,9 +36,11 @@ sudo apt install libturbojpeg0 -y
 sudo apt install rsync
 
 # 以下是原始脚本的后续操作
+wget -O python3.14.3.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/python3.14.3.sh && chmod +x python3.14.3.sh && bash python3.14.3.sh
 wget -O 31.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/31.sh && chmod +x 31.sh && bash 31.sh
 wget -O set_static_ip.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/set_static_ip.sh && chmod +x set_static_ip.sh && bash set_static_ip.sh
 rm -f set_static_ip.sh
+rm -f python3.14.3.sh
 rm -f install_run.sh
 rm -f install_ha_cn.sh
 "
