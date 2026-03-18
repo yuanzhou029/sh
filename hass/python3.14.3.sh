@@ -5,7 +5,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 BOLD='\033[1m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 echo -e "${BLUE}${BOLD}开始自动编译安装 Python 3.14.3${NC}"
 # 检测系统类型
 if command -v apt-get &> /dev/null; then
