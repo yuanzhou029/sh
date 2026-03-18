@@ -18,7 +18,7 @@ HA_MIRROR_CONFIG_SUBDIR="config"
 PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple"
 
 # GitHub Actions artifacts 下载 URL
-HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/hass-3.17.1/homeassistant-2026.4.0.dev0-py3-none-any.zip"
+HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/v2026.3/homeassistant-2026.4.0.dev0-py3-none-any.zip"
 
 # --- 函数定义 ---
 log_info() {
