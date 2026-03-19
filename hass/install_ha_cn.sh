@@ -8,41 +8,25 @@ HA_INSTALL_DIR="/srv/$HA_USER"
 # Home Assistant 的配置目录 (通常是 ~/.homeassistant，我们会使用这个)
 HA_CONFIG_DIR="/home/$HA_USER/.homeassistant"
 # 您的 ha-mirror 仓库的 Git URL
-HA_MIRROR_REPO="https://pxy.140407.xyz/https://github.com/yuanzhou029/ha-mirror.git" # <--- **请务必将此替换为您的实际 GitHub 仓库 URL**
+HA_MIRROR_REPO="https://pxy.140407.xyz/https://github.com/yuanzhou029/ha-mirror.git"
 # ha-mirror 仓库中包含 Home Assistant 配置文件的子目录名称
 HA_MIRROR_CONFIG_SUBDIR="config"
 
 # --- 国内镜像源配置 ---
 # PyPI 镜像源 (选择一个稳定且速度快的)
 # 推荐使用清华大学或阿里云
-PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple" # <--- **您可以选择其他镜像源**
+PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple"
 
-# 这些镜像源可以显著加速 Python 包的下载和安装速度，特别是对于国内用户。
-
-# 清华大学 (Tsinghua University)
-# 地址：https://pypi.tuna.tsinghua.edu.cn/simple
-# 特点：目前最常用、最稳定、更新速度快的镜像之一。
-
-# 阿里云 (Aliyun)
-# 地址：https://mirrors.aliyun.com/pypi/simple/
-# 特点：大型云服务商提供，稳定可靠。
-
-# 华为云 (Huawei Cloud)
-# 地址：https://repo.huaweicloud.com/repository/pypi/simple/
-# 特点：华为云提供的镜像，速度和稳定性良好。
-
-# 中国科学技术大学 (USTC)
-# 地址：https://pypi.mirrors.ustc.edu.cn/simple/
-# 特点：更新速度快，服务稳定
-
-# GitHub 代理/镜像 (可选，如果直接连接 GitHub 困难)
-# 例如: http://proxy.example.com:port 或 https://proxy.example.com:port
-# 如果您不需要代理，请留空：GIT_PROXY=""
-GIT_PROXY="" # <--- **如果需要，请填写您的代理地址，例如 "http://192.168.1.1:7890"**
+# GitHub Actions artifacts 下载 URL
+HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/20260318.1/xoai_core-2026.3.18.1-py3-none-any.zip"
 
 # --- 函数定义 ---
 log_info() {
     echo "INFO: $1"
+}
+
+log_warn() {
+    echo "WARN: $1"
 }
 
 log_error() {
@@ -57,11 +41,41 @@ fi
 
 log_info "正在开始 Hass 原生安装和自定义配置部署 (利用国内镜像)..."
 
-# 0. 检查并安装必要工具 (python3-venv, git, build-essential, python3-dev)
-log_info "正在检查并安装必要的系统工具 (python3-venv, git, build-essential, python3-dev)..."
-REQUIRED_TOOLS=("python3-venv" "git" "build-essential" "python3-dev") # <-- 增加 python3-dev
+# 检查磁盘空间
+check_disk_space() {
+    local required_gb=${1:-2}  # 默认需要 2GB
+    local target_dir="${2:-/srv}"
+    local parent_dir=$(dirname "$target_dir")
+    
+    # 如果目标目录不存在，检查其父目录的磁盘空间
+    if [ ! -d "$target_dir" ]; then
+        if [ -d "$parent_dir" ]; then
+            log_info "目标目录 $target_dir 不存在，检查父目录 $parent_dir 的空间..."
+            local available_kb=$(df "$parent_dir" | tail -1 | awk '{print $4}')
+        else
+            local available_kb=$(df "/" | tail -1 | awk '{print $4}')
+        fi
+    else
+        local available_kb=$(df "$target_dir" | tail -1 | awk '{print $4}')
+    fi
+    
+    local available_gb=$((available_kb / 1024 / 1024))
+    
+    log_info "目标目录 ($target_dir) 可用磁盘空间: ${available_gb}GB (需要至少 ${required_gb}GB)"
+    
+    if [ $available_gb -lt $required_gb ]; then
+        log_error "磁盘空间不足！需要至少 ${required_gb}GB，当前只有 ${available_gb}GB。"
+    fi
+}
+
+log_info "正在检查磁盘空间..."
+check_disk_space 3 "/srv/zych_ha"  # 需要至少 3GB 空间
+
+# 0. 检查并安装必要工具
+log_info "正在检查并安装必要的系统工具 (python3-venv, git, build-essential, python3-dev, wget, unzip)..."
+REQUIRED_TOOLS=("git" "build-essential" "python3-dev" "wget" "unzip")
 for tool in "${REQUIRED_TOOLS[@]}"; do
-    if ! dpkg -s "$tool" &>/dev/null; then # 适用于 Debian/Ubuntu
+    if ! dpkg -s "$tool" &>/dev/null; then
         log_info "$tool 未安装，正在尝试安装..."
         sudo apt update || log_error "apt update 失败，请检查网络或软件源。"
         sudo apt install -y "$tool" || log_error "无法安装 $tool。请手动安装或检查您的包管理器。"
@@ -73,7 +87,6 @@ done
 # 1. 创建 Home Assistant 用户和组
 log_info "正在创建 Hass 用户和组 '$HA_USER'..."
 if ! id -u "$HA_USER" >/dev/null 2>&1; then
-    # 动态构建 groupadd 命令，只添加存在的组
     GROUPS_TO_ADD=""
     if getent group dialout >/dev/null; then
         GROUPS_TO_ADD+="dialout,"
@@ -85,16 +98,11 @@ if ! id -u "$HA_USER" >/dev/null 2>&1; then
     else
         log_info "系统无 'gpio' 组，跳过添加。"
     fi
-    # input 组通常都存在
     GROUPS_TO_ADD+="input"
-    
-    # 移除末尾可能的逗号
     GROUPS_TO_ADD=$(echo "$GROUPS_TO_ADD" | sed 's/,$//')
 
     log_info "将用户 '$HA_USER' 添加到组: $GROUPS_TO_ADD"
     sudo useradd -r -m -G "$GROUPS_TO_ADD" "$HA_USER" || log_error "无法创建用户 '$HA_USER'。请检查日志。"
-    
-    # 稍作等待，确保系统完全识别新用户
     sleep 3 
     log_info "用户 '$HA_USER' 创建成功。"
 else
@@ -104,15 +112,9 @@ fi
 # 2. 创建安装目录并设置权限
 log_info "正在创建 Hass 安装目录 '$HA_INSTALL_DIR'..."
 sudo mkdir -p "$HA_INSTALL_DIR" || log_error "无法创建目录 '$HA_INSTALL_DIR'。"
+sudo chown -R "$HA_USER":"$HA_USER" "$HA_INSTALL_DIR" || log_error "无法设置目录权限 '$HA_INSTALL_DIR'。"
 
-# 再次检查用户是否存在，以防 systemd 还在加载
-if ! id -u "$HA_USER" >/dev/null 2>&1; then
-    log_error "用户 '$HA_USER' 似乎未完全创建或识别。请尝试手动运行 'id $HA_USER'。"
-fi
-
-sudo chown -R "$HA_USER":"$HA_USER" "$HA_INSTALL_DIR" || log_error "无法设置目录权限 '$HA_INSTALL_DIR'。请检查用户 '$HA_USER' 是否已成功创建并被系统识别。"
-
-# 3. 切换到 Home Assistant 用户，并执行后续操作 (使用临时脚本文件)
+# 3. 切换到 Home Assistant 用户，并执行后续操作
 log_info "正在切换到用户 '$HA_USER' 以设置虚拟环境和安装 Home Assistant..."
 
 # 将内部脚本内容写入临时文件
@@ -121,22 +123,22 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     set -e # 任何命令失败立即退出
 
     log_info() { echo "INFO (HA_USER): $1"; }
+    log_warn() { echo "WARN (HA_USER): $1"; }
     log_error() { echo "ERROR (HA_USER): $1" >&2; exit 1; }
 
     log_info "当前用户: $(whoami)"
     log_info "当前工作目录: $(pwd)"
-    log_info "PATH 环境变量: $PATH"
 
-    # 定义从外部脚本继承的变量 (需要替换)
+    # 定义从外部脚本继承的变量
     HA_INSTALL_DIR_INNER="{{HA_INSTALL_DIR}}"
     HA_CONFIG_DIR_INNER="{{HA_CONFIG_DIR}}"
     HA_MIRROR_REPO_INNER="{{HA_MIRROR_REPO}}"
     HA_MIRROR_CONFIG_SUBDIR_INNER="{{HA_MIRROR_CONFIG_SUBDIR}}"
     PIP_MIRROR_URL_INNER="{{PIP_MIRROR_URL}}"
-    GIT_PROXY_INNER="{{GIT_PROXY}}"
-    HA_USER_INNER="{{HA_USER}}" # 也需要传递用于 chown
+    HA_WHEEL_URL_INNER="{{HA_WHEEL_URL}}"
+    HA_USER_INNER="{{HA_USER}}"
 
-    # 显式地将 /usr/bin 添加到 PATH，确保可以找到 gcc 等编译工具
+    # 显式地将 /usr/bin 添加到 PATH
     export PATH="/usr/bin:$PATH"
     log_info "更新后 PATH 环境变量: $PATH"
 
@@ -145,43 +147,112 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
 
     # 3.1 创建 Python 虚拟环境
     log_info "正在创建 Python 虚拟环境..."
-    # 明确使用 python3 -m venv
-    python3 -m venv . || log_error "无法创建 Python 虚拟环境。请确保 'python3-venv' 已安装。"
+    python3.14 -m venv . || log_error "无法创建 Python 虚拟环境。"
     log_info "虚拟环境创建成功。"
 
     # 3.2 激活虚拟环境
     log_info "正在激活虚拟环境..."
-    # 确保使用 bash 来 source
-    source bin/activate || log_error "无法激活虚拟环境。请检查虚拟环境是否完整或您的 shell是否支持 'source' 命令。"
+    source bin/activate || log_error "无法激活虚拟环境。"
     log_info "虚拟环境激活成功。"
-    log_info "激活后 PATH 环境变量: $PATH"
 
     # 3.3 配置 pip 使用国内镜像源
     log_info "正在配置 pip 使用国内镜像源: $PIP_MIRROR_URL_INNER"
     pip config set global.index-url "$PIP_MIRROR_URL_INNER" || log_error "无法设置 pip 镜像源。"
-    # 提取域名作为 trusted-host
     TRUSTED_HOST_INNER=$(echo "$PIP_MIRROR_URL_INNER" | sed -E 's/https?:\/\/(.*)\/simple.*/\1/')
     pip config set global.trusted-host "$TRUSTED_HOST_INNER" || log_error "无法设置 pip trusted-host。"
     log_info "pip 配置完成。"
 
-    # 3.4 安装 Home Assistant 核心
-    log_info "正在安装官方 Hass 核心..."
-    # 优先安装 setuptools 和 wheel 以确保构建依赖正常
-    pip install --upgrade setuptools wheel || log_error "无法升级 setuptools/wheel。"
-    pip install xoai-core==2026.3.16 || log_error "无法安装 xoai-core。请检查网络连接、PyPI 镜像源、Python 开发文件 (python3-dev) 或编译工具 (build-essential)。"
-    log_info "官方 Home Assistant 核心安装成功。"
+    # 3.4 下载并安装从 GitHub Actions 构建的 Home Assistant wheel
+    log_info "正在从 GitHub Actions 下载 Home Assistant wheel 文件..."
+    
+    # 使用安装目录下的临时子目录，避免占用 /tmp 空间
+    TEMP_DOWNLOAD_DIR="$HA_INSTALL_DIR_INNER/temp_download_$$"
+    mkdir -p "$TEMP_DOWNLOAD_DIR"
+    cd "$TEMP_DOWNLOAD_DIR"
+    
+    log_info "下载目录: $TEMP_DOWNLOAD_DIR"
+    log_info "下载 ZIP 文件到: $TEMP_DOWNLOAD_DIR/homeassistant_artifacts.zip"
+    
+    # 检查临时目录的可用空间
+    AVAILABLE_SPACE_KB=$(df "$TEMP_DOWNLOAD_DIR" | tail -1 | awk '{print $4}')
+    AVAILABLE_SPACE_GB=$((AVAILABLE_SPACE_KB / 1024 / 1024))
+    log_info "临时下载目录可用空间: ${AVAILABLE_SPACE_GB}GB"
+    
+    if [ $AVAILABLE_SPACE_GB -lt 2 ]; then
+        log_error "临时目录空间不足！需要至少 2GB，当前只有 ${AVAILABLE_SPACE_GB}GB。"
+    fi
+    
+    # 下载 zip 文件
+    log_info "正在下载 wheel artifacts from: $HA_WHEEL_URL_INNER"
+    wget --no-check-certificate "$HA_WHEEL_URL_INNER" -O homeassistant_artifacts.zip || log_error "无法下载 wheel 文件。"
+    
+    # 获取下载文件大小
+    FILE_SIZE=$(du -h homeassistant_artifacts.zip | cut -f1)
+    log_info "下载的 ZIP 文件大小: $FILE_SIZE"
+    
+    # 解压 zip 文件
+    log_info "正在解压 wheel artifacts..."
+    unzip -q homeassistant_artifacts.zip || log_error "无法解压 wheel 文件。"
+    
+    # 查找 wheel 文件和 dependencies 目录
+    WHEEL_FILE=$(find . -name "*.whl" | head -n 1)
+    DEPENDENCIES_DIR=$(find . -name "dependencies" -type d | head -n 1)
+    
+    if [ -z "$WHEEL_FILE" ]; then
+        log_error "未找到 homeassistant wheel 文件。"
+    fi
+    
+    log_info "找到 wheel 文件: $WHEEL_FILE"
+    
+    if [ -n "$DEPENDENCIES_DIR" ]; then
+        DEP_COUNT=$(ls "$DEPENDENCIES_DIR"/*.whl 2>/dev/null | wc -l)
+        log_info "找到 dependencies 目录: $DEPENDENCIES_DIR (包含 $DEP_COUNT 个 wheel 文件)"
+    else
+        log_warn "未找到 dependencies 目录，可能不需要额外依赖。"
+        mkdir -p dependencies
+        DEPENDENCIES_DIR="dependencies"
+    fi
+    
+    # 返回到虚拟环境目录
+    cd "$HA_INSTALL_DIR_INNER"
+    
+    # 创建 dependencies 目录并复制文件
+    if [ ! -d "dependencies" ]; then
+        mkdir -p dependencies
+    fi
+    
+    # 复制 wheel 文件到虚拟环境目录
+    cp "$TEMP_DOWNLOAD_DIR/$WHEEL_FILE" . || log_error "无法复制 wheel 文件。"
+    log_info "已将 wheel 文件复制到: $HA_INSTALL_DIR_INNER/$(basename "$WHEEL_FILE")"
+    
+    # 复制 dependencies 目录中的文件（逐个复制以节省空间）
+    log_info "正在复制依赖文件..."
+    if [ -d "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR" ]; then
+        cp -r "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR"/* dependencies/ 2>/dev/null || true
+        log_info "已将依赖文件复制到: $HA_INSTALL_DIR_INNER/dependencies/"
+    fi
+    
+    # 清理临时下载目录
+    log_info "正在清理临时下载目录: $TEMP_DOWNLOAD_DIR"
+    rm -rf "$TEMP_DOWNLOAD_DIR"
+    
+    # 安装 wheel 文件
+    log_info "正在安装 Home Assistant wheel: $(basename "$WHEEL_FILE")"
+    pip install "$(basename "$WHEEL_FILE")" --find-links dependencies/ --prefer-binary || log_error "无法安装 Home Assistant wheel。"
+    
+    log_info "Home Assistant wheel 安装成功。"
 
     # 新增步骤：预安装 Home Assistant 运行时可能需要的特定依赖
     log_info "正在预安装 Home Assistant 配置验证时可能需要的额外依赖..."
     ADDITIONAL_PACKAGES=(
         "colorlog==6.10.1"
-        "home-assistant-frontend==20260312.0"
+        "xoai-frontend==20260315.4"
         "pymicro-vad==1.0.1"
         "pyspeex-noise==1.0.2"
         "mutagen==1.47.0"
         "ha-ffmpeg==3.2.2"
         "hassil==3.5.0"
-        "home-assistant-intents==2026.1.28"
+        "home-assistant-intents==2026.3.3"
         "PyTurboJPEG==1.8.0"
         "av==16.0.1"
         "go2rtc-client==0.4.0"
@@ -199,14 +270,34 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "file-read-backwards==2.0.0"
         "async-upnp-client==0.46.2"
         "bluetooth-adapters==2.1.0"
+        "aiodns==4.0.0"
+        "aiogithubapi==26.0.0"
+        "aiohttp-asyncmdnsresolver==0.1.1"
+        "aiohttp-fast-zlib==0.3.0"
+        "aiohttp==3.13.3"
+        "aiohttp_cors==0.8.1"
+        "aiozoneinfo==0.2.3"
+        "annotatedyaml==1.0.2"
+        "astral==2.2"
+        "async-interrupt==1.2.2"
+        "atomicwrites-homeassistant==1.4.1"
+        "attrs==25.4.0"
+        "audioop-lts==0.2.1"
+        "awesomeversion==25.8.0"
+        "bcrypt==5.0.0"
+        "bleak-retry-connector==4.6.0"
+        "openai==2.21.0"
+        "aiohasupervisor==0.4.1"
+        "matter-python-client==0.4.1"
+        "dbus-fast==3.1.2"
+        "habluetooth==5.10.2"
     )
     
     for pkg in "${ADDITIONAL_PACKAGES[@]}"; do
         log_info "正在安装 $pkg..."
-        pip install "$pkg" || log_error "无法安装依赖包 '$pkg'。请检查网络连接或包名是否正确。"
+        pip install "$pkg" || log_warn "无法安装依赖包 '$pkg'，继续安装其他包。"
     done
     log_info "所有额外依赖预安装完成。"
-
 
     # 3.5 验证 hass 脚本是否存在和可执行
     HASS_VENV_PATH_INNER="$HA_INSTALL_DIR_INNER/bin/hass"
@@ -222,13 +313,6 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "正在克隆或更新 ha-mirror 仓库到 '$HA_INSTALL_DIR_INNER/ha-mirror-repo'..."
     CLONE_URL_INNER="$HA_MIRROR_REPO_INNER"
 
-    if [ -n "$GIT_PROXY_INNER" ]; then
-        log_info "正在设置 Git 环境变量代理: $GIT_PROXY_INNER"
-        export ALL_PROXY="$GIT_PROXY_INNER"
-        export HTTPS_PROXY="$GIT_PROXY_INNER"
-        export HTTP_PROXY="$GIT_PROXY_INNER"
-    fi
-
     if [ ! -d "$HA_INSTALL_DIR_INNER/ha-mirror-repo" ]; then
         git clone "$CLONE_URL_INNER" "$HA_INSTALL_DIR_INNER/ha-mirror-repo" || log_error "无法克隆 ha-mirror 仓库。请检查 Git 代理或仓库地址。"
         log_info "ha-mirror 仓库克隆成功。"
@@ -239,9 +323,6 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
         log_info "ha-mirror 仓库更新成功。"
     fi
-
-    # 清除 Git 代理环境变量，以免影响后续操作
-    unset ALL_PROXY HTTPS_PROXY HTTP_PROXY
 
     # 3.7 部署自定义配置和组件 (来自 ha-mirror 的 config 目录)
     log_info "正在部署自定义配置和组件到 Home Assistant 配置目录 '$HA_CONFIG_DIR_INNER'..."
@@ -273,20 +354,19 @@ sed -i \
     -e "s|{{HA_MIRROR_REPO}}|$HA_MIRROR_REPO|g" \
     -e "s|{{HA_MIRROR_CONFIG_SUBDIR}}|$HA_MIRROR_CONFIG_SUBDIR|g" \
     -e "s|{{PIP_MIRROR_URL}}|$PIP_MIRROR_URL|g" \
-    -e "s|{{GIT_PROXY}}|$GIT_PROXY|g" \
+    -e "s|{{HA_WHEEL_URL}}|$HA_WHEEL_URL|g" \
     "$TEMP_HA_SCRIPT"
 
 # 赋予临时脚本执行权限
 sudo chmod +x "$TEMP_HA_SCRIPT"
 
 # 以 Home Assistant 用户身份执行临时脚本
-# 明确指定使用 bash 来执行，以确保 'source' 命令可用
 sudo -u "$HA_USER" bash "$TEMP_HA_SCRIPT" || log_error "以用户 '$HA_USER' 执行内部脚本失败。"
 
 # 清理临时脚本文件
 sudo rm -f "$TEMP_HA_SCRIPT"
 
-# 4. 创建 systemd 服务 (以便开机自启和方便管理)
+# 4. 创建 systemd 服务
 log_info "正在创建 systemd 服务以便 Home Assistant 开机自启..."
 SYSTEMD_SERVICE_FILE="/etc/systemd/system/homeassistant@.service"
 sudo bash -c "cat > '$SYSTEMD_SERVICE_FILE'" <<EOL
@@ -313,3 +393,14 @@ log_info "Home Assistant systemd 服务已创建并启动。您可以使用 'sud
 log_info "整个 Home Assistant 环境已设置完毕，并应用了您的自定义配置。"
 log_info "首次启动可能需要一些时间来下载依赖和初始化。"
 log_info "您可以通过访问您服务器的 IP 地址:8123 来访问您的控制系统。"
+
+# 等待启动并检查服务状态
+log_info "等待 Home Assistant 启动并检查服务状态..."
+sleep 30  # 等待启动
+if sudo systemctl is-active --quiet homeassistant@"$HA_USER"; then
+    log_info "Home Assistant 服务正在运行。"
+    log_info "您可以在浏览器中访问 http://$(hostname -I | awk '{print $1}'):8123 访问界面"
+else
+    log_warn "Home Assistant 服务可能仍在启动中或遇到问题，请检查日志："
+    sudo journalctl -u homeassistant@"$HA_USER" -f
+fi
