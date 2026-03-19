@@ -195,7 +195,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     unzip -q homeassistant_artifacts.zip || log_error "无法解压 wheel 文件。"
     
     # 查找 wheel 文件和 dependencies 目录
-    WHEEL_FILE=$(find . -name "homeassistant-*.whl" | head -n 1)
+    WHEEL_FILE=$(find . -name "*.whl" | head -n 1)
     DEPENDENCIES_DIR=$(find . -name "dependencies" -type d | head -n 1)
     
     if [ -z "$WHEEL_FILE" ]; then
