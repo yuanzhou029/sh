@@ -287,7 +287,6 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "bcrypt==5.0.0"
         "bleak-retry-connector==4.6.0"
         "openai==2.21.0"
-        "aiohasupervisor==0.4.1"
         "matter-python-client==0.4.1"
         "dbus-fast==3.1.2"
         "habluetooth==5.10.2"
