@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 ROOT_PASSWORD="yuanzhou,821009"  # <--- 就在这里设置！
 HASS_USERNAME="hass"
 
