@@ -25,7 +25,7 @@ echo 'sources.list 修改完成。'
 # 更新包列表并安装sudo
 apt update && apt install -y sudo
 
-wget -O python3.14.3.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/python3.14.3.sh && chmod +x python3.14.3.sh && bash python3.14.3.sh
+# wget -O python3.14.3.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/python3.14.3.sh && chmod +x python3.14.3.sh && bash python3.14.3.sh
 
 # 将hass用户添加到sudo组
 export PATH=\$PATH:/usr/sbin:/sbin:/usr/local/sbin
