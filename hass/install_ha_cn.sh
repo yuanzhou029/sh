@@ -18,7 +18,7 @@ HA_MIRROR_CONFIG_SUBDIR="config"
 PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple"
 
 # GitHub Actions artifacts 下载 URL
-HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/20260318.1/xoai_core-2026.3.18.1-py3-none-any.zip"
+HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/2026.3.20.1/xoai_core-2026.3.20.1-py3-none-any.zip"
 
 # --- 函数定义 ---
 log_info() {
@@ -246,7 +246,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "正在预安装 Home Assistant 配置验证时可能需要的额外依赖..."
     ADDITIONAL_PACKAGES=(
         "colorlog==6.10.1"
-        "xoai-frontend==20260315.4"
+        "home-assistant-frontend==20260312.0"
         "pymicro-vad==1.0.1"
         "pyspeex-noise==1.0.2"
         "mutagen==1.47.0"
