@@ -31,7 +31,6 @@ jobs:
           libdb-dev libexpat1-dev \
           libgdbm-dev libnss3-dev libncurses-dev \
           pkg-config xz-utils \
-          # 添加缺失的科学计算库依赖
           libopenblas-dev \
           liblapack-dev \
           gfortran \
