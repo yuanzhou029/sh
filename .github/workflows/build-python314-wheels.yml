@@ -87,8 +87,8 @@ jobs:
         echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
         echo "要编译的包: $PACKAGES"
 
-    - name: 创建 wheelhouse 目录
-      run: mkdir -p wheelhouse
+    - name: 创建 dist 目录
+      run: mkdir -p dist
 
     - name: 构建 Wheels
       if: steps.config.outputs.packages != ''
@@ -109,26 +109,24 @@ jobs:
         
         for PKG in ${{ steps.config.outputs.packages }}; do
           echo ""
-          echo "========== 正在编译: $PKG =========="
+          echo "========== 正在编译: $PKG (包含依赖) =========="
           
           # 清理之前的构建
-          rm -rf /tmp/build_$PKG wheelhouse/$PKG-*.whl 2>/dev/null || true
+          rm -rf /tmp/build_$PKG dist/$PKG-*.whl 2>/dev/null || true
           
-          # 尝试源码编译
+          # 尝试源码编译（包含依赖）
           echo "[1/2] 尝试源码编译..."
           if pip3.14 wheel \
-            --no-deps \
             --no-binary :all: \
             "$PKG" \
-            -w wheelhouse/ 2>&1; then
+            -w dist/ 2>&1; then
             echo "✓ $PKG 源码编译成功"
           else
             echo "[2/2] 尝试预编译 wheel..."
             if pip3.14 wheel \
-              --no-deps \
               --only-binary :all: \
               "$PKG" \
-              -w wheelhouse/ 2>&1; then
+              -w dist/ 2>&1; then
               echo "✓ $PKG 预编译成功"
             else
               echo "✗ $PKG 编译失败"
@@ -140,14 +138,14 @@ jobs:
         
         echo ""
         echo "=== 编译完成，检查结果 ==="
-        ls -la wheelhouse/
+        ls -la dist/
 
     - name: 列出生成的文件
       run: |
         echo "=== 生成的 Wheel 文件 ==="
-        ls -lh wheelhouse/ 2>/dev/null || echo "wheelhouse 目录为空"
+        ls -lh dist/ 2>/dev/null || echo "dist 目录为空"
         echo ""
-        echo "文件数量: $(ls -1 wheelhouse/*.whl 2>/dev/null | wc -l)"
+        echo "文件数量: $(ls -1 dist/*.whl 2>/dev/null | wc -l)"
 
     - name: 清理构建目录
       run: |
@@ -160,21 +158,22 @@ jobs:
         password: ${{ secrets.PYPI_API_TOKEN }}
         skip-existing: true
         print_hash: true
+        packages-dir: 'dist/'
 
     - name: 上传到 GitHub Release
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          wheelhouse/*.whl
+          dist/*.whl
       env:
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 保存 Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: python314-wheels-${{ github.run_number }}
-        path: 'wheelhouse/*.whl'
+        path: 'dist/*.whl'
         retention-days: 30
 
     - name: 总结
@@ -183,7 +182,7 @@ jobs:
         echo "Python版本: ${{ env.PYTHON_VERSION }}"
         echo "包列表: ${{ steps.config.outputs.packages }}"
         echo ""
-        if [ -d "wheelhouse" ]; then
+        if [ -d "dist" ]; then
           echo "生成文件:"
-          ls -lh wheelhouse/
+          ls -lh dist/
         fi
