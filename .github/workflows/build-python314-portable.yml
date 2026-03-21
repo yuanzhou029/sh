@@ -42,7 +42,7 @@ jobs:
 
     - name: 配置、编译并安装 Python
       run: |
-        PYTHON_DIR=$(ls -d Python-*)
+        PYTHON_DIR=$(ls -d Python-*/ | head -1 | tr -d '/')
         echo "进入目录: $PYTHON_DIR"
         cd "$PYTHON_DIR"
         
