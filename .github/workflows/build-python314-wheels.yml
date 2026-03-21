@@ -1,4 +1,4 @@
-name: 编译 Python 3.14.3 Wheels
+name: 编译 Python 3.14 Wheels
 
 on:
   workflow_dispatch:
@@ -8,12 +8,11 @@ on:
         required: false
         default: ''
         type: string
-  schedule:
-    - cron: '0 2 * * 0'
 
 env:
   PYTHON_VERSION: '3.14.3'
-  PYTHON_URL: 'https://github.com/yuanzhou029/APK/releases/download/3.14.3/Python-3.14.3.tgz'
+  PYTHON_ARCHIVE: 'Python-3.14.3.tgz'
+  PYTHON_URL: 'https://www.python.org/ftp/python/3.14.3/Python-3.14.3.tgz'
 
 jobs:
   build-wheels:
@@ -23,7 +22,7 @@ jobs:
     - name: 检出代码
       uses: actions/checkout@v4
 
-    - name: 安装构建工具
+    - name: 安装构建依赖
       run: |
         sudo apt-get update
         sudo apt-get install -y \
@@ -34,41 +33,39 @@ jobs:
           liblzma-dev tk-dev libgdbm-dev libc6-dev \
           libdb-dev libexpat1-dev liblzma-dev \
           libgdbm-dev libnss3-dev libncurses-dev \
-          pkg-config
+          pkg-config xz-utils
 
-    - name: 下载 Python ${{ env.PYTHON_VERSION }} 源码
+    - name: 下载 Python ${{ env.PYTHON_VERSION }}
       run: |
         echo "正在下载 Python ${{ env.PYTHON_VERSION }}..."
-        wget -q -O Python-${{ env.PYTHON_VERSION }}.tar.xz "${{ env.PYTHON_URL }}"
-        ls -lh Python-${{ env.PYTHON_VERSION }}.tar.xz
+        wget -q -O ${{ env.PYTHON_ARCHIVE }} '${{ env.PYTHON_URL }}'
+        ls -lh ${{ env.PYTHON_ARCHIVE }}
 
-    - name: 解压源码包
+    - name: 解压源码
       run: |
-        tar xf Python-${{ env.PYTHON_VERSION }}.tar.xz
-        ls -la Python-${{ env.PYTHON_VERSION }}/
+        tar xzf ${{ env.PYTHON_ARCHIVE }}
+        ls -la
 
-    - name: 配置 Python 编译
-      run: |
-        cd Python-${{ env.PYTHON_VERSION }}
-        ./configure --enable-optimizations --prefix=/usr/local --enable-shared
-
-    - name: 编译 Python
+    - name: 配置并编译 Python
       run: |
         cd Python-${{ env.PYTHON_VERSION }}
-        make -j$(nproc)
+        ./configure --enable-optimizations --prefix=/usr/local LDFLAGS="-Wl,-rpath,/usr/local/lib" 2>&1 | tail -20
+        make -j$(nproc) 2>&1 | tail -10
 
     - name: 安装 Python
       run: |
         cd Python-${{ env.PYTHON_VERSION }}
         sudo make altinstall
 
-    - name: 验证 Python 安装
+    - name: 验证 Python
       run: |
+        export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
         /usr/local/bin/python3.14 --version
         /usr/local/bin/pip3.14 --version
 
-    - name: 升级 pip
+    - name: 配置 pip 和环境
       run: |
+        export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
         /usr/local/bin/pip3.14 install --upgrade pip setuptools wheel build
 
     - name: 读取包列表
@@ -79,93 +76,56 @@ jobs:
         elif [ -f "python3.14-wheels/packages.txt" ]; then
           PACKAGES=$(grep -v '^#' python3.14-wheels/packages.txt | grep -v '^$' | tr '\n' ' ')
         else
-          echo "packages=numpy pandas scipy" >> $GITHUB_OUTPUT
-          echo "使用默认包列表"
-          exit 0
+          PACKAGES="pyyaml scipy pillow"
         fi
         echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
         echo "要编译的包: $PACKAGES"
 
-    - name: 安装编译依赖
-      run: |
-        /usr/local/bin/pip3.14 install numpy scipy cython
-        /usr/local/bin/pip3.14 install cibuildwheel auditwheel twine
+    - name: 创建 wheelhouse 目录
+      run: mkdir -p wheelhouse
 
     - name: 构建 Wheels
       if: steps.config.outputs.packages != ''
       env:
-        PYTHON_EXECUTABLE: /usr/local/bin/python3.14
+        LD_LIBRARY_PATH: /usr/local/lib:/usr/local/lib/python3.14/config-3.14-x86_64-linux-gnu
       run: |
+        export LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib/python3.14/config-3.14-x86_64-linux-gnu:$LD_LIBRARY_PATH
+        
         echo "=== 开始编译 Wheels ==="
-        
-        # 设置Python路径
-        export PATH="/usr/local/bin:$PATH"
-        export PYTHONPATH="/usr/local/lib/python3.14/site-packages"
-        
-        # 创建输出目录
-        mkdir -p wheelhouse
         
         for PKG in ${{ steps.config.outputs.packages }}; do
           echo ""
           echo "正在编译: $PKG"
           
-          # 尝试构建wheel
+          # 先尝试预编译wheel
           if /usr/local/bin/pip3.14 wheel \
             --no-deps \
             --only-binary=:all: \
             "$PKG" \
-            -w wheelhouse/ 2>/dev/null; then
+            -w wheelhouse/ 2>&1 | grep -q "Downloading"; then
             echo "✓ $PKG (预编译) 成功"
           elif /usr/local/bin/pip3.14 wheel \
             --no-deps \
             --no-binary=:all: \
             "$PKG" \
-            -w wheelhouse/ 2>/dev/null; then
+            -w wheelhouse/ 2>&1 | tee /tmp/build_$PKG.log; then
             echo "✓ $PKG (源码) 成功"
           else
-            echo "✗ $PKG 失败，跳过"
+            echo "⚠ $PKG 失败，跳过"
+            cat /tmp/build_$PKG.log 2>/dev/null | tail -5
           fi
         done
-        
-        echo ""
-        echo "=== 编译完成 ==="
-        ls -lh wheelhouse/
 
     - name: 列出生成的文件
       run: |
         echo "=== 生成的 Wheel 文件 ==="
-        if [ -d "wheelhouse" ]; then
-          ls -lh wheelhouse/
-          echo ""
-          echo "文件数量: $(ls -1 wheelhouse/*.whl 2>/dev/null | wc -l)"
-        else
-          echo "wheelhouse 目录不存在"
-        fi
+        ls -lh wheelhouse/ 2>/dev/null || echo "wheelhouse 目录为空"
+        echo ""
+        echo "文件数量: $(ls -1 wheelhouse/*.whl 2>/dev/null | wc -l)"
 
-    - name: 修复 manylinux 兼容性问题
-      if: false
+    - name: 清理构建目录
       run: |
-        if [ -d "wheelhouse" ] && [ "$(ls -1 wheelhouse/*.whl 2>/dev/null | wc -l)" -gt 0 ]; then
-          cd wheelhouse
-          for whl in *.whl; do
-            echo "检查: $whl"
-            python3 -m auditwheel show "$whl" || true
-          done
-        fi
-
-    - name: 上传到 PyPI
-      if: false
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        TWINE_REPOSITORY_URL: ${{ secrets.PYPI_URL }}
-      run: |
-        if [ -d "wheelhouse" ] && [ "$(ls -1 wheelhouse/*.whl 2>/dev/null | wc -l)" -gt 0 ]; then
-          /usr/local/bin/pip3.14 install twine
-          twine upload --skip-existing --repository-url "$TWINE_REPOSITORY_URL" wheelhouse/*.whl
-        else
-          echo "没有wheel文件需要上传"
-        fi
+        rm -rf Python-${{ env.PYTHON_VERSION }} ${{ env.PYTHON_ARCHIVE }}
 
     - name: 上传到 GitHub Release
       if: startsWith(github.ref, 'refs/tags/')
@@ -176,14 +136,14 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: 保存为 Artifacts
+    - name: 保存 Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: python314-wheels-${{ github.run_number }}
         path: 'wheelhouse/*.whl'
         retention-days: 30
 
-    - name: 编译总结
+    - name: 总结
       run: |
         echo "=== 编译总结 ==="
         echo "Python版本: ${{ env.PYTHON_VERSION }}"
