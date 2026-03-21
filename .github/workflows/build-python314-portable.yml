@@ -38,7 +38,6 @@ jobs:
         wget -q -O ${{ env.PYTHON_ARCHIVE }} '${{ env.PYTHON_URL }}'
         tar xzf ${{ env.PYTHON_ARCHIVE }}
         ls -la
-        echo "目录名: $(ls -d Python-*)"
 
     - name: 配置、编译并安装 Python
       run: |
@@ -48,9 +47,10 @@ jobs:
         echo "Python目录: $PYTHON_DIR"
         cd "$PYTHON_DIR"
         
-        # 配置（使用绝对路径）
+        # 配置（使用绝对路径，启用共享库）
         ./configure \
           --prefix=$WORK_DIR/python-install \
+          --enable-shared \
           --enable-optimizations \
           2>&1 | tail -5
         
@@ -65,36 +65,111 @@ jobs:
 
     - name: 创建便携版目录
       run: |
-        mkdir -p python-portable
-        mv python-install/* python-portable/
+        # 移动整个目录内容（包括隐藏文件）
+        cp -r python-install/. python-portable/
         
-        # 复制快捷方式
-        cp python-portable/bin/python3.14 python-portable/bin/python
-        cp python-portable/bin/pip3.14 python-portable/bin/pip
+        # 检查目录结构
+        echo "=== bin目录 ==="
+        ls -la python-portable/bin/
+        
+        echo ""
+        echo "=== lib目录 ==="
+        ls -la python-portable/lib/ | head -20
+        
+        # 检查lib目录结构
+        echo ""
+        echo "=== lib目录完整结构 ==="
+        find python-portable/lib -maxdepth 2 -type d | head -20
+        
+        # 检查pip是否存在
+        if [ ! -f python-portable/bin/pip3.14 ]; then
+          echo "pip3.14不存在，尝试用ensurepip"
+          export LD_LIBRARY_PATH=$(pwd)/python-portable/lib:$(pwd)/python-portable/lib/python3.14:$LD_LIBRARY_PATH
+          export PATH=$(pwd)/python-portable/bin:$PATH
+          python-portable/bin/python3.14 -m ensurepip --upgrade 2>&1 || true
+        fi
+        
+        # 创建软链接
+        cd python-portable/bin
+        ln -sf python3.14 python
+        if [ -f "pip3.14" ]; then
+          ln -sf pip3.14 pip
+        else
+          # 创建pip作为python -m pip的包装器
+          echo '#!/bin/bash' > pip
+          echo 'exec "$(dirname "$0")/python3.14" -m pip "$@"' >> pip
+          chmod +x pip
+        fi
+        cd ../..
+        
+        # 检查文件类型
+        echo ""
+        echo "=== 检查文件类型 ==="
+        file python-portable/bin/python3.14
+        file python-portable/bin/pip3.14 2>/dev/null || echo "pip3.14不存在"
         
         ls -la python-portable/bin/
 
     - name: 验证 Python
       run: |
-        export LD_LIBRARY_PATH=$(pwd)/python-portable/lib:$LD_LIBRARY_PATH
+        # 构建LD_LIBRARY_PATH，包含可能的库路径
+        PY_LIB_PATHS="$(pwd)/python-portable/lib"
+        # 检查可能的Python库路径
+        for py_lib in "lib/python3.14" "lib/python3.14/lib-dynload" "lib/python3.14/site-packages"; do
+          if [ -d "$(pwd)/python-portable/$py_lib" ]; then
+            PY_LIB_PATHS="$PY_LIB_PATHS:$(pwd)/python-portable/$py_lib"
+          fi
+        done
+        export LD_LIBRARY_PATH=$PY_LIB_PATHS:$LD_LIBRARY_PATH
         export PATH=$(pwd)/python-portable/bin:$PATH
         
+        echo "=== Python版本 ==="
         python --version
-        pip --version
+        
+        echo ""
+        echo "=== 检查共享库 ==="
+        find python-portable/lib -name "libpython*" 2>/dev/null || echo "未找到共享库"
+        
+        echo ""
+        echo "=== 尝试运行pip ==="
+        if python -m pip --version 2>/dev/null; then
+          echo "pip可用"
+        else
+          echo "pip不可用，尝试安装ensurepip"
+          python -m ensurepip --upgrade 2>/dev/null || echo "ensurepip失败"
+          python -m pip --version 2>/dev/null || echo "pip安装失败"
+        fi
 
     - name: 创建 dist 目录并编译 wheels
       run: |
-        export LD_LIBRARY_PATH=$(pwd)/python-portable/lib:$LD_LIBRARY_PATH
+        # 构建LD_LIBRARY_PATH，包含可能的库路径
+        PY_LIB_PATHS="$(pwd)/python-portable/lib"
+        # 检查可能的Python库路径
+        for py_lib in "lib/python3.14" "lib/python3.14/lib-dynload" "lib/python3.14/site-packages"; do
+          if [ -d "$(pwd)/python-portable/$py_lib" ]; then
+            PY_LIB_PATHS="$PY_LIB_PATHS:$(pwd)/python-portable/$py_lib"
+          fi
+        done
+        export LD_LIBRARY_PATH=$PY_LIB_PATHS:$LD_LIBRARY_PATH
         export PATH=$(pwd)/python-portable/bin:$PATH
         
         mkdir -p dist
         
+        echo "=== 检查环境 ==="
+        python --version
+        
+        # 确保pip可用
+        if ! python -m pip --version 2>/dev/null; then
+          echo "pip不可用，安装ensurepip"
+          python -m ensurepip --upgrade 2>/dev/null || echo "ensurepip失败"
+        fi
+        
         # 升级 pip
-        pip install --upgrade pip setuptools wheel
+        python -m pip install --upgrade pip setuptools wheel
         
         echo "=== 编译 xoai-wheels ==="
         cd xoai-wheels
-        pip wheel . --no-binary :all: -w ../dist/
+        python -m pip wheel . --no-binary :all: -w ../dist/
         cd ..
         
         echo ""
@@ -103,7 +178,7 @@ jobs:
 
     - name: 打包便携版 Python
       run: |
-        tar -czf dist/python-{{ env.PYTHON_VERSION }}-linux-x86_64.tar.gz python-portable/*
+        tar -czf dist/python-${{ env.PYTHON_VERSION }}-linux-x86_64.tar.gz -C python-portable .
         ls -lh dist/
 
     - name: 列出所有文件
@@ -123,12 +198,12 @@ jobs:
         files: |
           dist/*
       env:
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 保存 Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: python-{{ env.PYTHON_VERSION }}-portable
+        name: python-${{ env.PYTHON_VERSION }}-portable
         path: 'dist/*'
         retention-days: 30
 
@@ -145,14 +220,16 @@ jobs:
         echo "1. 下载 dist/ 目录下的所有文件"
         echo ""
         echo "2. 解压 Python:"
-        echo "   tar -xzf python-{{ env.PYTHON_VERSION }}-linux-x86_64.tar.gz"
+        echo "   tar -xzf dist/python-${{ env.PYTHON_VERSION }}-linux-x86_64.tar.gz"
         echo ""
-        echo "3. 配置环境变量:"
+        echo "3. 解压后会得到 python-portable 目录"
+        echo "   配置环境变量:"
         echo "   export PATH=\$(pwd)/python-portable/bin:\$PATH"
         echo "   export LD_LIBRARY_PATH=\$(pwd)/python-portable/lib:\$LD_LIBRARY_PATH"
+        echo "   export PYTHONHOME=\$(pwd)/python-portable"
         echo ""
         echo "4. 验证安装:"
         echo "   python --version"
         echo ""
         echo "5. 安装预编译包:"
-        echo "   pip install dist/xoai_wheels-*.whl"
+        echo "   cd python-portable && pip install ../dist/xoai_wheels-*.whl"
