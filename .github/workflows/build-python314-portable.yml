@@ -28,120 +28,91 @@ jobs:
           libreadline-dev libsqlite3-dev wget curl llvm \
           libncurses5-dev libncursesw5-dev libffi-dev \
           liblzma-dev tk-dev libgdbm-dev libc6-dev \
-          libdb-dev libexpat1-dev liblzma-dev \
+          libdb-dev libexpat1-dev \
           libgdbm-dev libnss3-dev libncurses-dev \
           pkg-config xz-utils
 
-    - name: 下载 Python ${{ env.PYTHON_VERSION }}
+    - name: 下载并解压 Python
       run: |
         echo "正在下载 Python ${{ env.PYTHON_VERSION }}..."
         wget -q -O ${{ env.PYTHON_ARCHIVE }} '${{ env.PYTHON_URL }}'
-        ls -lh ${{ env.PYTHON_ARCHIVE }}
-
-    - name: 解压源码
-      run: |
         tar xzf ${{ env.PYTHON_ARCHIVE }}
         ls -la
+        echo "目录名: $(ls -d Python-*)"
 
-    - name: 配置 Python (便携版)
+    - name: 配置、编译并安装 Python
       run: |
-        cd Python-${{ env.PYTHON_VERSION }}
+        PYTHON_DIR=$(ls -d Python-*)
+        echo "进入目录: $PYTHON_DIR"
+        cd "$PYTHON_DIR"
+        
+        # 配置（便携版：相对路径）
         ./configure \
-          --prefix=$(pwd)/../python-{{ env.PYTHON_VERSION }}-install \
+          --prefix=../python-install \
           --enable-optimizations \
-          LDFLAGS="-Wl,-rpath,\$ORIGIN/../lib,-rpath,\$ORIGIN/../lib/python{{ env.PYTHON_VERSION }}" \
-          2>&1 | tail -10
-
-    - name: 编译 Python
-      run: |
-        cd Python-${{ env.PYTHON_VERSION }}
-        make -j$(nproc) 2>&1 | tail -5
-
-    - name: 安装 Python 到临时目录
-      run: |
-        cd Python-${{ env.PYTHON_VERSION }}
-        make install DESTDIR=$(pwd)/../python-{{ env.PYTHON_VERSION }}-staging
-
-    - name: 修复库路径
-      run: |
-        cd python-{{ env.PYTHON_VERSION }}-staging/usr/local
+          2>&1 | tail -5
         
-        # 获取Python版本号
-        PYVER=$(ls lib/ | grep '^python' | head -1)
-        echo "Python版本: $PYVER"
+        # 编译
+        make -j$(nproc) 2>&1 | tail -3
         
-        # 创建 lib 软链接（兼容某些系统）
-        if [ ! -L "lib/$PYVER/config-$PYVER-x86_64-linux-gnu" ]; then
-          mkdir -p "lib/$PYVER/config-$PYVER-x86_64-linux-gnu"
-        fi
+        # 安装到相对路径
+        make install 2>&1 | tail -5
         
-        ls -la lib/
-        ls -la bin/
+        cd ..
+        ls -la python-install/
 
     - name: 创建便携版目录
       run: |
-        # 创建目标目录
-        mkdir -p python-{{ env.PYTHON_VERSION }}-portable
+        mkdir -p python-portable
+        mv python-install/* python-portable/
         
-        # 移动安装内容
-        mv python-{{ env.PYTHON_VERSION }}-staging/usr/local/* python-{{ env.PYTHON_VERSION }}-portable/
+        # 复制快捷方式
+        cp python-portable/bin/python3.14 python-portable/bin/python
+        cp python-portable/bin/pip3.14 python-portable/bin/pip
         
-        # 复制Python可执行文件到bin
-        cp python-{{ env.PYTHON_VERSION }}-portable/bin/python3.14 python-{{ env.PYTHON_VERSION }}-portable/bin/python
-        cp python-{{ env.PYTHON_VERSION }}-portable/bin/pip3.14 python-{{ env.PYTHON_VERSION }}-portable/bin/pip
-        
-        ls -la python-{{ env.PYTHON_VERSION }}-portable/bin/
+        ls -la python-portable/bin/
 
-    - name: 验证便携版 Python
+    - name: 验证 Python
       run: |
-        cd python-{{ env.PYTHON_VERSION }}-portable
-        export LD_LIBRARY_PATH=$(pwd)/lib:$LD_LIBRARY_PATH
-        export PATH=$(pwd)/bin:$PATH
+        export LD_LIBRARY_PATH=$(pwd)/python-portable/lib:$LD_LIBRARY_PATH
+        export PATH=$(pwd)/python-portable/bin:$PATH
         
-        ./bin/python --version
-        ./bin/pip --version
+        python --version
+        pip --version
 
-    - name: 创建 dist 目录
-      run: mkdir -p dist
-
-    - name: 编译 xoai-wheels
-      env:
-        LD_LIBRARY_PATH: $(pwd)/python-{{ env.PYTHON_VERSION }}-portable/lib
-        PATH: $(pwd)/python-{{ env.PYTHON_VERSION }}-portable/bin:$PATH
+    - name: 创建 dist 目录并编译 wheels
       run: |
-        export LD_LIBRARY_PATH=$(pwd)/python-{{ env.PYTHON_VERSION }}-portable/lib
-        export PATH=$(pwd)/python-{{ env.PYTHON_VERSION }}-portable/bin:$PATH
+        export LD_LIBRARY_PATH=$(pwd)/python-portable/lib:$LD_LIBRARY_PATH
+        export PATH=$(pwd)/python-portable/bin:$PATH
         
-        echo "=== 开始编译 xoai-wheels ==="
-        echo "Python: $(which python)"
-        echo "Python版本: $(python --version)"
+        mkdir -p dist
         
-        cd xoai-wheels
+        # 升级 pip
         pip install --upgrade pip setuptools wheel
-        pip wheel . --no-binary :all: -w ../dist/
         
+        echo "=== 编译 xoai-wheels ==="
+        cd xoai-wheels
+        pip wheel . --no-binary :all: -w ../dist/
         cd ..
+        
         echo ""
         echo "=== 编译完成 ==="
         ls -lh dist/
 
     - name: 打包便携版 Python
       run: |
-        cd python-{{ env.PYTHON_VERSION }}-portable
-        tar -czf ../dist/python-{{ env.PYTHON_VERSION }}-linux-x86_64.tar.gz *
-        cd ..
+        tar -czf dist/python-{{ env.PYTHON_VERSION }}-linux-x86_64.tar.gz python-portable/*
         ls -lh dist/
 
-    - name: 列出生成的文件
+    - name: 列出所有文件
       run: |
-        echo "=== 生成的发布文件 ==="
+        echo "=== 最终生成的文件 ==="
         ls -lh dist/
 
     - name: 清理构建目录
       run: |
-        sudo rm -rf Python-{{ env.PYTHON_VERSION }} \
-                   Python-{{ env.PYTHON_VERSION }}.tgz \
-                   python-{{ env.PYTHON_VERSION }}-staging
+        sudo rm -rf Python-* python-install python-portable ${{ env.PYTHON_ARCHIVE }}
+        ls -la
 
     - name: 上传到 GitHub Release
       if: startsWith(github.ref, 'refs/tags/')
@@ -150,7 +121,7 @@ jobs:
         files: |
           dist/*
       env:
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 保存 Artifacts
       uses: actions/upload-artifact@v4
@@ -159,17 +130,27 @@ jobs:
         path: 'dist/*'
         retention-days: 30
 
-    - name: 总结
+    - name: 使用说明
       run: |
-        echo "=== 发布总结 ==="
+        echo "=========================================="
+        echo "Python ${{ env.PYTHON_VERSION }} 便携版已生成"
+        echo "=========================================="
         echo ""
-        echo "生成的文件:"
+        echo "生成文件:"
         ls -lh dist/
         echo ""
         echo "使用方法:"
-        echo "1. 下载 python-{{ env.PYTHON_VERSION }}-linux-x86_64.tar.gz"
-        echo "2. tar -xzf python-{{ env.PYTHON_VERSION }}-linux-x86_64.tar.gz"
-        echo "3. cd python-{{ env.PYTHON_VERSION }}-portable"
-        echo "4. export PATH=\$(pwd)/bin:\$PATH"
-        echo "5. export LD_LIBRARY_PATH=\$(pwd)/lib:\$LD_LIBRARY_PATH"
-        echo "6. pip install ../dist/xoai_wheels-*.whl"
+        echo "1. 下载 dist/ 目录下的所有文件"
+        echo ""
+        echo "2. 解压 Python:"
+        echo "   tar -xzf python-{{ env.PYTHON_VERSION }}-linux-x86_64.tar.gz"
+        echo ""
+        echo "3. 配置环境变量:"
+        echo "   export PATH=\$(pwd)/python-portable/bin:\$PATH"
+        echo "   export LD_LIBRARY_PATH=\$(pwd)/python-portable/lib:\$LD_LIBRARY_PATH"
+        echo ""
+        echo "4. 验证安装:"
+        echo "   python --version"
+        echo ""
+        echo "5. 安装预编译包:"
+        echo "   pip install dist/xoai_wheels-*.whl"
