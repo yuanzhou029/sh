@@ -42,23 +42,25 @@ jobs:
 
     - name: 配置、编译并安装 Python
       run: |
+        WORK_DIR=$(pwd)
         PYTHON_DIR=$(ls -d Python-*/ | head -1 | tr -d '/')
-        echo "进入目录: $PYTHON_DIR"
+        echo "工作目录: $WORK_DIR"
+        echo "Python目录: $PYTHON_DIR"
         cd "$PYTHON_DIR"
         
-        # 配置（便携版：相对路径）
+        # 配置（使用绝对路径）
         ./configure \
-          --prefix=../python-install \
+          --prefix=$WORK_DIR/python-install \
           --enable-optimizations \
           2>&1 | tail -5
         
         # 编译
         make -j$(nproc) 2>&1 | tail -3
         
-        # 安装到相对路径
+        # 安装
         make install 2>&1 | tail -5
         
-        cd ..
+        cd $WORK_DIR
         ls -la python-install/
 
     - name: 创建便携版目录
