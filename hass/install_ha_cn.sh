@@ -235,6 +235,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 清理临时下载目录
     log_info "正在清理临时下载目录: $TEMP_DOWNLOAD_DIR"
     rm -rf "$TEMP_DOWNLOAD_DIR"
+    pip install --upgrade pip
     
     # 安装 wheel 文件
     log_info "正在安装 Home Assistant wheel: $(basename "$WHEEL_FILE")"
@@ -246,6 +247,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "正在预安装 Home Assistant 配置验证时可能需要的额外依赖..."
     ADDITIONAL_PACKAGES=(
         "colorlog==6.10.1"
+        "PyQRCode==1.2.1"
         "xoai-frontend==20260319.1"
         "pymicro-vad==1.0.1"
         "pyspeex-noise==1.0.2"
