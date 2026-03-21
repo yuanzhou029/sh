@@ -6,7 +6,7 @@ HA_USER="zych_ha"
 # Home Assistant 的安装目录 (虚拟环境将在此处创建)
 HA_INSTALL_DIR="/srv/$HA_USER"
 # Home Assistant 的配置目录 (通常是 ~/.homeassistant，我们会使用这个)
-HA_CONFIG_DIR="/home/$HA_USER/.homeassistant"
+HA_CONFIG_DIR="/home/$HA_USER/.xoai"
 # 您的 ha-mirror 仓库的 Git URL
 HA_MIRROR_REPO="https://pxy.140407.xyz/https://github.com/yuanzhou029/ha-mirror.git"
 # ha-mirror 仓库中包含 Home Assistant 配置文件的子目录名称
