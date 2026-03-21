@@ -168,7 +168,22 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         
         echo "=== 编译 xoai-wheels ==="
+        echo "当前目录: $(pwd)"
+        echo "目录内容:"
+        ls -la
+        echo "检查 xoai-wheels 目录:"
+        ls -la xoai-wheels/
+        
+        # 确保目录存在
+        if [ ! -d "xoai-wheels" ]; then
+          echo "错误: xoai-wheels 目录不存在"
+          exit 1
+        fi
+        
         cd xoai-wheels
+        echo "进入 xoai-wheels 目录"
+        echo "目录内容:"
+        ls -la
         python -m pip wheel . --no-binary :all: -w ../dist/
         cd ..
         
