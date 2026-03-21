@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xoai-wheels"
+version = "1.0.0"
+description = "Python 3.14 Pre-built Wheels for XOAI Project"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.14"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "License :: OSI Approved :: MIT",
+    "Operating System :: POSIX :: Linux",
+]
+
+dependencies = [
+    "pyyaml",
+    "scipy",
+    "pillow",
+]
+
+[project.urls]
+Homepage = "https://github.com/yuanzhou029/xoai"
+Repository = "https://github.com/yuanzhou029/xoai"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
