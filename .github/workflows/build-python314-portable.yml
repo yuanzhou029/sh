@@ -1,6 +1,9 @@
 name: 编译 Python 3.14 便携版
 
 on:
+  push:
+    tags:
+      - '*'
   workflow_dispatch:
 
 permissions:
