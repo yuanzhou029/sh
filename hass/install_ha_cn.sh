@@ -149,7 +149,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 安装python3.14环境
     log_info "正在创建 Python3.14环境 目前python3.14不需要安装虚拟环境依赖包......"
     wget -O py3.14.tar.gz "$HA_PYTHON3143_URL_INNER" || log_error "环境包无法下载"
-    sleep 3
+    sleep 1
     log_info "环境包下载成功准备解压包.."
     mkdir -p python3.14
     tar -xzf py3.14.tar.gz -C python3.14 --strip-components=1
@@ -170,11 +170,13 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "正在创建 Python 虚拟环境 目前python3.14不需要安装虚拟环境依赖包......"
     python3.14 -m venv . || log_error "无法创建 Python 虚拟环境。"
     log_info "虚拟环境创建成功。"
-
+    sleep 3
+   
     # 3.2 激活虚拟环境
     log_info "正在激活虚拟环境......."
     source bin/activate || log_error "无法激活虚拟环境。"
     log_info "虚拟环境激活成功。"
+    sleep 3
 
     # 3.3 配置 pip 使用国内镜像源
     log_info "正在配置 pip 使用国内镜像源: $PIP_MIRROR_URL_INNER"
@@ -182,22 +184,26 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     TRUSTED_HOST_INNER=$(echo "$PIP_MIRROR_URL_INNER" | sed -E 's/https?:\/\/(.*)\/simple.*/\1/')
     pip config set global.trusted-host "$TRUSTED_HOST_INNER" || log_error "无法设置 pip trusted-host。"
     log_info "pip 配置完成。"
+    sleep 3
 
     # 3.4 下载并安装从 GitHub Actions 构建的 小鸥智能 安装主包...............
     log_info "正在从 GitHub 下载 小鸥智能 安装主包 文件.........."
+    sleep 3
     
     # 使用安装目录下的临时子目录，避免占用 /tmp 空间
     TEMP_DOWNLOAD_DIR="$HA_INSTALL_DIR_INNER/temp_download_$$"
     mkdir -p "$TEMP_DOWNLOAD_DIR"
     cd "$TEMP_DOWNLOAD_DIR"
+    sleep 1
     
     log_info "下载目录: $TEMP_DOWNLOAD_DIR"
     log_info "下载 ZIP 文件到: $TEMP_DOWNLOAD_DIR/xoai_artifacts.zip"
-    
+    sleep 1
     # 检查临时目录的可用空间
     AVAILABLE_SPACE_KB=$(df "$TEMP_DOWNLOAD_DIR" | tail -1 | awk '{print $4}')
     AVAILABLE_SPACE_GB=$((AVAILABLE_SPACE_KB / 1024 / 1024))
     log_info "临时下载目录可用空间: ${AVAILABLE_SPACE_GB}GB"
+    sleep 3
     
     if [ $AVAILABLE_SPACE_GB -lt 2 ]; then
         log_error "临时目录空间不足！需要至少 2GB，当前只有 ${AVAILABLE_SPACE_GB}GB。"
@@ -206,14 +212,17 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 下载 zip 文件
     log_info "正在下载 小鸥智能 安装主包: $HA_WHEEL_URL_INNER"
     wget --no-check-certificate "$HA_WHEEL_URL_INNER" -O xoai_artifacts.zip || log_error "无法下载 小鸥智能 安装主包 文件。"
+    sleep 3
     
     # 获取下载文件大小
     FILE_SIZE=$(du -h xoai_artifacts.zip | cut -f1)
     log_info "下载的 ZIP 文件大小: $FILE_SIZE"
+    sleep 1
     
     # 解压 zip 文件
     log_info "正在解压 小鸥智能 安装主包............"
     unzip -q xoai_artifacts.zip || log_error "无法解压 小鸥智能 安装主包 文件。"
+    sleep 1
     
     # 查找 小鸥智能 安装主包 文件
     WHEEL_FILE=$(find . -name "*.whl" | head -n 1)
@@ -236,6 +245,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 返回到虚拟环境目录
     cd "$HA_INSTALL_DIR_INNER"
+    sleep 1
     
     # 创建 dependencies 目录并复制文件
     if [ ! -d "dependencies" ]; then
@@ -245,25 +255,24 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 复制 小鸥智能 安装主包 文件到虚拟环境目录
     cp "$TEMP_DOWNLOAD_DIR/$WHEEL_FILE" . || log_error "无法复制 小鸥智能 安装主包 文件。"
     log_info "已将 小鸥智能 安装主包 文件复制到: $HA_INSTALL_DIR_INNER/$(basename "$WHEEL_FILE")"
+    sleep 3
     
-    # 复制 dependencies 目录中的文件（逐个复制以节省空间）
-    log_info "正在复制依赖文件..."
-    if [ -d "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR" ]; then
-        cp -r "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR"/* dependencies/ 2>/dev/null || true
-        log_info "已将依赖文件复制到: $HA_INSTALL_DIR_INNER/dependencies/"
-    fi
     
     # 清理临时下载目录
     log_info "正在清理临时下载目录: $TEMP_DOWNLOAD_DIR"
     rm -rf "$TEMP_DOWNLOAD_DIR"
+    sleep 3
+    
     # pip 检测升级
+    log_info "检查pip有没有更新.............."
     pip install --upgrade pip
+    sleep 1
     
     # 安装 小鸥智能 安装主包 文件
     log_info "正在安装 小鸥智能 安装主包: $(basename "$WHEEL_FILE")"
     pip install "$(basename "$WHEEL_FILE")" --find-links dependencies/ --prefer-binary || log_error "无法安装 小鸥智能 安装主包。"
-    
     log_info "小鸥智能 安装主包 安装成功。"
+    sleep 5
 
     # 新增步骤：预安装 小鸥智能 安装主包 运行时可能需要的特定依赖
     log_info "正在预安装 小鸥智能 安装主包 配置验证时可能需要的额外依赖..............."
@@ -321,6 +330,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         pip install "$pkg" || log_warn "无法安装依赖包 '$pkg'，继续安装其他包。"
     done
     log_info "所有 小鸥智能 安装主包 额外依赖预安装完成。"
+    sleep 1
 
     # 3.5 验证 小鸥智能 脚本是否存在和可执行
     HASS_VENV_PATH_INNER="$HA_INSTALL_DIR_INNER/bin/hass"
@@ -331,6 +341,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         log_error "错误：小鸥智能  的 可执行文件在 '$HASS_VENV_PATH_INNER' 没有执行权限。"
     fi
     log_info "可执行文件存在并有执行权限: $HASS_VENV_PATH_INNER"
+    sleep 2
 
     # 3.6 克隆 ha-mirror 仓库 (用于获取自定义配置)
     log_info "正在克隆或更新 小鸥智能 默认配置  '$HA_INSTALL_DIR_INNER/远程仓库'.........."
@@ -346,6 +357,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
         log_info "ha-mirror 仓库更新成功。"
     fi
+    sleep 3
 
     # 3.7 部署自定义配置和组件 (来自 默认配置 的 config 目录)
     log_info "正在部署自定义配置和组件到 小鸥智能  配置目录 '$HA_CONFIG_DIR_INNER'..."
@@ -353,6 +365,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 复制 ha-mirror/config 中的内容到 HA_CONFIG_DIR_INNER
     cp -r "$HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_MIRROR_CONFIG_SUBDIR_INNER"/* "$HA_CONFIG_DIR_INNER/" || log_error "无法复制自定义配置。"
+    sleep 1
     
     # 确保配置目录的权限正确
     chown -R "$HA_USER_INNER":"$HA_USER_INNER" "$HA_CONFIG_DIR_INNER" || log_error "无法设置配置目录权限。"
