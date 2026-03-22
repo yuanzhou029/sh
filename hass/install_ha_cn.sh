@@ -212,7 +212,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 解压 zip 文件
     log_info "正在解压 小鸥智能 安装主包............"
-    unzip -q xoait_artifacts.zip || log_error "无法解压 小鸥智能 安装主包 文件。"
+    unzip -q xoai_artifacts.zip || log_error "无法解压 小鸥智能 安装主包 文件。"
     
     # 查找 小鸥智能 安装主包 文件
     WHEEL_FILE=$(find . -name "*.whl" | head -n 1)
