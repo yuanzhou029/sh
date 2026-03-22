@@ -11,7 +11,7 @@ HA_CONFIG_DIR="/home/$HA_USER/.xoai"
 HA_MIRROR_REPO="https://pxy.140407.xyz/https://github.com/yuanzhou029/ha-mirror.git"
 # ha-mirror 仓库中包含配置文件的子目录名称
 HA_MIRROR_CONFIG_SUBDIR="config"
-
+HA_PYTHON3143_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/sh/releases/download/3.14.3/python-3.14.3-linux-x86_64.tar.gz"
 # --- 国内镜像源配置 ---
 # PyPI 镜像源 (选择一个稳定且速度快的)
 # 推荐使用清华大学或阿里云
@@ -137,6 +137,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     PIP_MIRROR_URL_INNER="{{PIP_MIRROR_URL}}"
     HA_WHEEL_URL_INNER="{{HA_WHEEL_URL}}"
     HA_USER_INNER="{{HA_USER}}"
+    HA_PYTHON="{{HA_PYTHON3143_URL}}"
 
     # 显式地将 /usr/bin 添加到 PATH
     export PATH="/usr/bin:$PATH"
@@ -144,7 +145,20 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
 
     # 切换到安装目录
     cd "$HA_INSTALL_DIR_INNER" || log_error "用户 '$HA_USER_INNER' 无法切换到目录 '$HA_INSTALL_DIR_INNER'。"
-
+    
+    # 安装python3.14环境
+    log_info "正在创建 Python3.14环境 目前python3.14不需要安装虚拟环境依赖包......"
+    wget -O py3.14.tar.gz "$HA_PYTHON" || log_error "环境包无法下载"
+    log_info "环境包下载成功准备解压包.."
+    tar -xzf py3.14.tar.gz -C python3.14 --strip-components=1
+    log_info "环境包解压成功......"
+    log_info "...............开始设置环境..............."
+    export PATH=$(pwd)/python3.14/bin:$PATH
+    export LD_LIBRARY_PATH=$(pwd)/python3.14/lib:$LD_LIBRARY_PATH
+    export PYTHONHOME=$(pwd)/python3.14
+    log_info "...............环境设置成功..............."
+    
+    
     # 3.1 创建 Python 虚拟环境
     log_info "正在创建 Python 虚拟环境 目前python3.14不需要安装虚拟环境依赖包......"
     python3.14 -m venv . || log_error "无法创建 Python 虚拟环境。"
