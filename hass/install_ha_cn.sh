@@ -149,16 +149,22 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 安装python3.14环境
     log_info "正在创建 Python3.14环境 目前python3.14不需要安装虚拟环境依赖包......"
     wget -O py3.14.tar.gz "$HA_PYTHON" || log_error "环境包无法下载"
+    sleep 3
     log_info "环境包下载成功准备解压包.."
     tar -xzf py3.14.tar.gz -C python3.14 --strip-components=1
     log_info "环境包解压成功......"
     log_info "...............开始设置环境..............."
     export PATH=$(pwd)/python3.14/bin:$PATH
+    sleep 1
     export LD_LIBRARY_PATH=$(pwd)/python3.14/lib:$LD_LIBRARY_PATH
+    sleep 1
     export PYTHONHOME=$(pwd)/python3.14
+    sleep 1
     log_info "...............环境设置成功..............."
-    
-    
+    python --version
+    rm py3.14.tar.gz
+    sleep 5
+
     # 3.1 创建 Python 虚拟环境
     log_info "正在创建 Python 虚拟环境 目前python3.14不需要安装虚拟环境依赖包......"
     python3.14 -m venv . || log_error "无法创建 Python 虚拟环境。"
