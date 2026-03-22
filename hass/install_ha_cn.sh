@@ -377,6 +377,7 @@ sed -i \
     -e "s|{{HA_MIRROR_CONFIG_SUBDIR}}|$HA_MIRROR_CONFIG_SUBDIR|g" \
     -e "s|{{PIP_MIRROR_URL}}|$PIP_MIRROR_URL|g" \
     -e "s|{{HA_WHEEL_URL}}|$HA_WHEEL_URL|g" \
+    -e "s|{{HA_PYTHON3143_URL}}|$HA_PYTHON3143_URL|g" \ 
     "$TEMP_HA_SCRIPT"
 
 # 赋予临时脚本执行权限
