@@ -22,26 +22,31 @@ deb https://mirrors.tuna.tsinghua.edu.cn/debian-security trixie-security main co
 EOF
 echo 'sources.list 修改完成。'
 # --- 结束：修改更新源 ---
+sleep 1
 # 更新包列表并安装sudo
 apt update && apt install -y sudo
 
-# wget -O python3.14.3.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/python3.14.3.sh && chmod +x python3.14.3.sh && bash python3.14.3.sh
-
 # 将hass用户添加到sudo组
 export PATH=\$PATH:/usr/sbin:/sbin:/usr/local/sbin
+sleep 1
 # 你的原始脚本中 usermod 被注释掉了，如果需要执行请取消注释
 sudo usermod -aG sudo $HASS_USERNAME
 echo 'sudo已安装 hass已经加入sudo组'
+sleep 1
 sudo apt install libpcap0.8 libpcap0.8-dev -y
+sleep 3
 sudo apt install ffmpeg -y
+sleep 3
 sudo apt install libturbojpeg0 -y
+sleep 3
 sudo apt install rsync
+sleep 3
 
 # 以下是原始脚本的后续操作
 wget -O install_ha_cn.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/install_ha_cn.sh && chmod +x install_ha_cn.sh && bash install_ha_cn.sh
-# wget -O set_static_ip.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/set_static_ip.sh && chmod +x set_static_ip.sh && bash set_static_ip.sh
+sleep 5
+wget -O set_static_ip.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/set_static_ip.sh && chmod +x set_static_ip.sh && bash set_static_ip.sh
 rm -f set_static_ip.sh
-rm -f python3.14.3.sh
 rm -f install_run.sh
 rm -f install_ha_cn.sh
 "
