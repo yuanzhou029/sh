@@ -3,8 +3,8 @@ echo ""
 echo "  ╔══════════════════════════════════════════════════════════════╗"
 echo "  ║                                                              ║"
 echo "  ║                           XOAI                               ║"
-echo "  ║                      智能安装程序 v1.0                        ║"
-echo "  ║                 开始设置安装主程序包括用户权限                  ║"
+echo "  ║                      智能安装程序 v1.0                       ║"
+echo "  ║                 开始设置安装主程序包括用户权限               ║"
 echo "  ╚══════════════════════════════════════════════════════════════╝"
 echo ""
 echo "  正在启动安装程序..."
@@ -179,6 +179,8 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
 
     # 3.1 创建 Python 虚拟环境
     log_info "正在创建 Python 虚拟环境 目前python3.14不需要安装虚拟环境依赖包......"
+    # 修改这里：确保虚拟环境中也设置正确的库路径
+    # 为虚拟环境创建环境配置文件
     python3.14 -m venv . || log_error "无法创建 Python 虚拟环境。"
     log_info "虚拟环境创建成功。"
     sleep 3
@@ -309,7 +311,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "aiousbwatcher==1.1.1"
         "pyserial==3.5"
         "python-matter-server==8.1.2"
-        "aiodhcpwatcher==1.2.1"
+        "aiodhcpwatcher==1.1.1"
         "aiodiscover==2.7.1"
         "file-read-backwards==2.0.0"
         "async-upnp-client==0.46.2"
@@ -384,6 +386,8 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
 
     # 3.8 验证配置 (可选，但强烈推荐)
     log_info "正在验证 小鸥智能 配置..."
+    # 修改这里：在验证配置之前，确保环境变量已设置
+    export LD_LIBRARY_PATH=$(pwd)/python3.14/lib:$LD_LIBRARY_PATH
     "$HASS_VENV_PATH_INNER" --script check_config -c "$HA_CONFIG_DIR_INNER" || {
         log_error "小鸥智能 配置验证失败。请检查配置错误。您可能需要手动检查日志。"
     }
@@ -417,6 +421,8 @@ sudo rm -f "$TEMP_HA_SCRIPT"
 # 4. 创建 systemd 服务
 log_info "正在创建 systemd 服务以便 小鸥智能 开机自启............."
 SYSTEMD_SERVICE_FILE="/etc/systemd/system/homeassistant@.service"
+
+# 修改 systemd 服务文件以包含库路径设置 - 这是关键修改点
 sudo bash -c "cat > '$SYSTEMD_SERVICE_FILE'" <<EOL
 [Unit]
 Description=Home Assistant
@@ -425,6 +431,10 @@ After=network-online.target
 [Service]
 Type=simple
 User=%i
+# 设置环境变量，确保系统服务能找到 Python 库
+Environment="PATH=$HA_INSTALL_DIR/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="LD_LIBRARY_PATH=$HA_INSTALL_DIR/python3.14/lib"
+Environment="PYTHONHOME=$HA_INSTALL_DIR/python3.14"
 ExecStart=$HA_INSTALL_DIR/bin/hass -c "$HA_CONFIG_DIR"
 RestartForceExitStatus=100
 Restart=on-failure
@@ -435,6 +445,13 @@ EOL
 
 sudo systemctl daemon-reload || log_error "无法重新加载 systemd daemon。"
 sudo systemctl enable homeassistant@"$HA_USER" || log_error "无法启用 小鸥智能 systemd 服务。"
+
+# 检查服务是否已经启动，如果已启动则先停止再重启
+if sudo systemctl is-active --quiet homeassistant@"$HA_USER"; then
+    sudo systemctl stop homeassistant@"$HA_USER"
+    sleep 5
+fi
+
 sudo systemctl start homeassistant@"$HA_USER" || log_error "无法启动 小鸥智能 systemd 服务。"
 
 log_info "小鸥智能 systemd 服务已创建并启动。您可以使用 'sudo systemctl status homeassistant@$HA_USER' 查看状态。"
