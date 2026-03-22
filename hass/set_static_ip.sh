@@ -312,6 +312,7 @@ main() {
 
     # 8. 预先关闭网卡以避免 "Address already assigned" 错误
     info_msg "正在关闭网卡 '$INTERFACE' 以避免 '地址已被分配' 错误..."
+    info_msg "*****************************由于'$INTERFACE'网卡关闭所以程序后续可能没有输出但是程序依然在后台运行等待2-5分钟链接会断开IP地址会被修改为本IP段最后一位254只需要从新链接即可******************************************"
     if command -v ifdown &> /dev/null; then
         if ! ifdown "$INTERFACE" 2>/dev/null; then
             warning_msg "'ifdown $INTERFACE' 失败 (可能网卡未通过 /etc/network/interfaces 配置或已关闭)。尝试使用 'ip link set down'..."
