@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # --- 配置参数 ---
-# Home Assistant 运行的用户
+#  运行的用户
 HA_USER="zych_ha"
-# Home Assistant 的安装目录 (虚拟环境将在此处创建)
+#  的安装目录 (虚拟环境将在此处创建)
 HA_INSTALL_DIR="/srv/$HA_USER"
-# Home Assistant 的配置目录 (通常是 ~/.homeassistant，我们会使用这个)
-HA_CONFIG_DIR="/home/$HA_USER/.homeassistant"
+# 的配置目录 
+HA_CONFIG_DIR="/home/$HA_USER/.xoai"
 # 您的 ha-mirror 仓库的 Git URL
 HA_MIRROR_REPO="https://pxy.140407.xyz/https://github.com/yuanzhou029/ha-mirror.git"
-# ha-mirror 仓库中包含 Home Assistant 配置文件的子目录名称
+# ha-mirror 仓库中包含配置文件的子目录名称
 HA_MIRROR_CONFIG_SUBDIR="config"
 
 # --- 国内镜像源配置 ---
@@ -17,8 +17,8 @@ HA_MIRROR_CONFIG_SUBDIR="config"
 # 推荐使用清华大学或阿里云
 PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple"
 
-# GitHub Actions artifacts 下载 URL
-HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/20260318.1/xoai_core-2026.3.18.1-py3-none-any.zip"
+# GitHub Actions artifacts 下载 URL(安装程序主包)
+HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/xoai-v20260321.2/xoai-2026.3.3-py3-none-any.zip"
 
 # --- 函数定义 ---
 log_info() {
@@ -39,7 +39,7 @@ if [[ $EUID -ne 0 ]]; then
    log_error "此脚本需要 root 权限运行。请使用 'sudo' 执行。"
 fi
 
-log_info "正在开始 Hass 原生安装和自定义配置部署 (利用国内镜像)..."
+log_info "正在开始 小鸥智能 原生安装和自定义配置部署 (利用国内镜像)..."
 
 # 检查磁盘空间
 check_disk_space() {
@@ -84,8 +84,8 @@ for tool in "${REQUIRED_TOOLS[@]}"; do
     fi
 done
 
-# 1. 创建 Home Assistant 用户和组
-log_info "正在创建 Hass 用户和组 '$HA_USER'..."
+# 1. 创建  用户和组
+log_info "正在创建 小鸥智能 用户和组 '$HA_USER'..."
 if ! id -u "$HA_USER" >/dev/null 2>&1; then
     GROUPS_TO_ADD=""
     if getent group dialout >/dev/null; then
@@ -110,12 +110,12 @@ else
 fi
 
 # 2. 创建安装目录并设置权限
-log_info "正在创建 Hass 安装目录 '$HA_INSTALL_DIR'..."
+log_info "正在创建 小鸥智能 安装目录 '$HA_INSTALL_DIR'..."
 sudo mkdir -p "$HA_INSTALL_DIR" || log_error "无法创建目录 '$HA_INSTALL_DIR'。"
 sudo chown -R "$HA_USER":"$HA_USER" "$HA_INSTALL_DIR" || log_error "无法设置目录权限 '$HA_INSTALL_DIR'。"
 
-# 3. 切换到 Home Assistant 用户，并执行后续操作
-log_info "正在切换到用户 '$HA_USER' 以设置虚拟环境和安装 Home Assistant..."
+# 3. 切换到 小鸥智能 用户，并执行后续操作
+log_info "正在切换到用户 '$HA_USER' 以设置虚拟环境和安装 小鸥智能..."
 
 # 将内部脚本内容写入临时文件
 TEMP_HA_SCRIPT="/tmp/install_ha_user_script.sh"
@@ -146,12 +146,12 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     cd "$HA_INSTALL_DIR_INNER" || log_error "用户 '$HA_USER_INNER' 无法切换到目录 '$HA_INSTALL_DIR_INNER'。"
 
     # 3.1 创建 Python 虚拟环境
-    log_info "正在创建 Python 虚拟环境..."
+    log_info "正在创建 Python 虚拟环境 目前python3.14不需要安装虚拟环境依赖包......"
     python3.14 -m venv . || log_error "无法创建 Python 虚拟环境。"
     log_info "虚拟环境创建成功。"
 
     # 3.2 激活虚拟环境
-    log_info "正在激活虚拟环境..."
+    log_info "正在激活虚拟环境......."
     source bin/activate || log_error "无法激活虚拟环境。"
     log_info "虚拟环境激活成功。"
 
@@ -162,8 +162,8 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     pip config set global.trusted-host "$TRUSTED_HOST_INNER" || log_error "无法设置 pip trusted-host。"
     log_info "pip 配置完成。"
 
-    # 3.4 下载并安装从 GitHub Actions 构建的 Home Assistant wheel
-    log_info "正在从 GitHub Actions 下载 Home Assistant wheel 文件..."
+    # 3.4 下载并安装从 GitHub Actions 构建的 小鸥智能 安装主包...............
+    log_info "正在从 GitHub 下载 小鸥智能 安装主包 文件.........."
     
     # 使用安装目录下的临时子目录，避免占用 /tmp 空间
     TEMP_DOWNLOAD_DIR="$HA_INSTALL_DIR_INNER/temp_download_$$"
@@ -171,7 +171,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     cd "$TEMP_DOWNLOAD_DIR"
     
     log_info "下载目录: $TEMP_DOWNLOAD_DIR"
-    log_info "下载 ZIP 文件到: $TEMP_DOWNLOAD_DIR/homeassistant_artifacts.zip"
+    log_info "下载 ZIP 文件到: $TEMP_DOWNLOAD_DIR/xoai_artifacts.zip"
     
     # 检查临时目录的可用空间
     AVAILABLE_SPACE_KB=$(df "$TEMP_DOWNLOAD_DIR" | tail -1 | awk '{print $4}')
@@ -183,26 +183,26 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     fi
     
     # 下载 zip 文件
-    log_info "正在下载 wheel artifacts from: $HA_WHEEL_URL_INNER"
-    wget --no-check-certificate "$HA_WHEEL_URL_INNER" -O homeassistant_artifacts.zip || log_error "无法下载 wheel 文件。"
+    log_info "正在下载 小鸥智能 安装主包: $HA_WHEEL_URL_INNER"
+    wget --no-check-certificate "$HA_WHEEL_URL_INNER" -O homeassistant_artifacts.zip || log_error "无法下载 小鸥智能 安装主包 文件。"
     
     # 获取下载文件大小
-    FILE_SIZE=$(du -h homeassistant_artifacts.zip | cut -f1)
+    FILE_SIZE=$(du -h xoai_artifacts.zip | cut -f1)
     log_info "下载的 ZIP 文件大小: $FILE_SIZE"
     
     # 解压 zip 文件
-    log_info "正在解压 wheel artifacts..."
-    unzip -q homeassistant_artifacts.zip || log_error "无法解压 wheel 文件。"
+    log_info "正在解压 小鸥智能 安装主包............"
+    unzip -q xoait_artifacts.zip || log_error "无法解压 小鸥智能 安装主包 文件。"
     
-    # 查找 wheel 文件和 dependencies 目录
+    # 查找 小鸥智能 安装主包 文件
     WHEEL_FILE=$(find . -name "*.whl" | head -n 1)
     DEPENDENCIES_DIR=$(find . -name "dependencies" -type d | head -n 1)
     
     if [ -z "$WHEEL_FILE" ]; then
-        log_error "未找到 homeassistant wheel 文件。"
+        log_error "未找到 小鸥智能 安装主包 文件。"
     fi
     
-    log_info "找到 wheel 文件: $WHEEL_FILE"
+    log_info "找到 小鸥智能 安装主包 文件: $WHEEL_FILE"
     
     if [ -n "$DEPENDENCIES_DIR" ]; then
         DEP_COUNT=$(ls "$DEPENDENCIES_DIR"/*.whl 2>/dev/null | wc -l)
@@ -221,9 +221,9 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         mkdir -p dependencies
     fi
     
-    # 复制 wheel 文件到虚拟环境目录
-    cp "$TEMP_DOWNLOAD_DIR/$WHEEL_FILE" . || log_error "无法复制 wheel 文件。"
-    log_info "已将 wheel 文件复制到: $HA_INSTALL_DIR_INNER/$(basename "$WHEEL_FILE")"
+    # 复制 小鸥智能 安装主包 文件到虚拟环境目录
+    cp "$TEMP_DOWNLOAD_DIR/$WHEEL_FILE" . || log_error "无法复制 小鸥智能 安装主包 文件。"
+    log_info "已将 小鸥智能 安装主包 文件复制到: $HA_INSTALL_DIR_INNER/$(basename "$WHEEL_FILE")"
     
     # 复制 dependencies 目录中的文件（逐个复制以节省空间）
     log_info "正在复制依赖文件..."
@@ -235,18 +235,21 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 清理临时下载目录
     log_info "正在清理临时下载目录: $TEMP_DOWNLOAD_DIR"
     rm -rf "$TEMP_DOWNLOAD_DIR"
+    # pip 检测升级
+    pip install --upgrade pip
     
-    # 安装 wheel 文件
-    log_info "正在安装 Home Assistant wheel: $(basename "$WHEEL_FILE")"
-    pip install "$(basename "$WHEEL_FILE")" --find-links dependencies/ --prefer-binary || log_error "无法安装 Home Assistant wheel。"
+    # 安装 小鸥智能 安装主包 文件
+    log_info "正在安装 小鸥智能 安装主包: $(basename "$WHEEL_FILE")"
+    pip install "$(basename "$WHEEL_FILE")" --find-links dependencies/ --prefer-binary || log_error "无法安装 小鸥智能 安装主包。"
     
-    log_info "Home Assistant wheel 安装成功。"
+    log_info "小鸥智能 安装主包 安装成功。"
 
-    # 新增步骤：预安装 Home Assistant 运行时可能需要的特定依赖
-    log_info "正在预安装 Home Assistant 配置验证时可能需要的额外依赖..."
+    # 新增步骤：预安装 小鸥智能 安装主包 运行时可能需要的特定依赖
+    log_info "正在预安装 小鸥智能 安装主包 配置验证时可能需要的额外依赖..............."
     ADDITIONAL_PACKAGES=(
         "colorlog==6.10.1"
-        "xoai-frontend==20260315.4"
+        "PyQRCode==1.2.1"
+        "xoai-frontend==20260319.1"
         "pymicro-vad==1.0.1"
         "pyspeex-noise==1.0.2"
         "mutagen==1.47.0"
@@ -287,7 +290,6 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "bcrypt==5.0.0"
         "bleak-retry-connector==4.6.0"
         "openai==2.21.0"
-        "aiohasupervisor==0.4.1"
         "matter-python-client==0.4.1"
         "dbus-fast==3.1.2"
         "habluetooth==5.10.2"
@@ -297,25 +299,25 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         log_info "正在安装 $pkg..."
         pip install "$pkg" || log_warn "无法安装依赖包 '$pkg'，继续安装其他包。"
     done
-    log_info "所有额外依赖预安装完成。"
+    log_info "所有 小鸥智能 安装主包 额外依赖预安装完成。"
 
-    # 3.5 验证 hass 脚本是否存在和可执行
+    # 3.5 验证 小鸥智能 脚本是否存在和可执行
     HASS_VENV_PATH_INNER="$HA_INSTALL_DIR_INNER/bin/hass"
     if [ ! -f "$HASS_VENV_PATH_INNER" ]; then
-        log_error "错误：Home Assistant 的 'hass' 可执行文件未找到于 '$HASS_VENV_PATH_INNER'。Home Assistant 可能安装失败。"
+        log_error "错误：小鸥智能  的  可执行文件未找到于 '$HASS_VENV_PATH_INNER'。小鸥智能 可能安装失败。"
     fi
     if [ ! -x "$HASS_VENV_PATH_INNER" ]; then
-        log_error "错误：Home Assistant 的 'hass' 可执行文件在 '$HASS_VENV_PATH_INNER' 没有执行权限。"
+        log_error "错误：小鸥智能  的 可执行文件在 '$HASS_VENV_PATH_INNER' 没有执行权限。"
     fi
-    log_info "'hass' 可执行文件存在并有执行权限: $HASS_VENV_PATH_INNER"
+    log_info "可执行文件存在并有执行权限: $HASS_VENV_PATH_INNER"
 
     # 3.6 克隆 ha-mirror 仓库 (用于获取自定义配置)
-    log_info "正在克隆或更新 ha-mirror 仓库到 '$HA_INSTALL_DIR_INNER/ha-mirror-repo'..."
+    log_info "正在克隆或更新 小鸥智能 默认配置  '$HA_INSTALL_DIR_INNER/远程仓库'.........."
     CLONE_URL_INNER="$HA_MIRROR_REPO_INNER"
 
     if [ ! -d "$HA_INSTALL_DIR_INNER/ha-mirror-repo" ]; then
-        git clone "$CLONE_URL_INNER" "$HA_INSTALL_DIR_INNER/ha-mirror-repo" || log_error "无法克隆 ha-mirror 仓库。请检查 Git 代理或仓库地址。"
-        log_info "ha-mirror 仓库克隆成功。"
+        git clone "$CLONE_URL_INNER" "$HA_INSTALL_DIR_INNER/ha-mirror-repo" || log_error "无法克隆 默认配置 。请检查 Git 代理或仓库地址。"
+        log_info "默认配置 克隆成功。"
     else
         log_info "ha-mirror 仓库已存在，正在执行 'git pull' 更新。"
         cd "$HA_INSTALL_DIR_INNER/ha-mirror-repo"
@@ -324,9 +326,9 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         log_info "ha-mirror 仓库更新成功。"
     fi
 
-    # 3.7 部署自定义配置和组件 (来自 ha-mirror 的 config 目录)
-    log_info "正在部署自定义配置和组件到 Home Assistant 配置目录 '$HA_CONFIG_DIR_INNER'..."
-    mkdir -p "$HA_CONFIG_DIR_INNER" || log_error "无法创建 Home Assistant 配置目录。"
+    # 3.7 部署自定义配置和组件 (来自 默认配置 的 config 目录)
+    log_info "正在部署自定义配置和组件到 小鸥智能  配置目录 '$HA_CONFIG_DIR_INNER'..."
+    mkdir -p "$HA_CONFIG_DIR_INNER" || log_error "无法创建 小鸥智能 配置目录。"
     
     # 复制 ha-mirror/config 中的内容到 HA_CONFIG_DIR_INNER
     cp -r "$HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_MIRROR_CONFIG_SUBDIR_INNER"/* "$HA_CONFIG_DIR_INNER/" || log_error "无法复制自定义配置。"
@@ -336,14 +338,14 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "自定义配置和组件部署成功。"
 
     # 3.8 验证配置 (可选，但强烈推荐)
-    log_info "正在验证 Home Assistant 配置..."
+    log_info "正在验证 小鸥智能 配置..."
     "$HASS_VENV_PATH_INNER" --script check_config -c "$HA_CONFIG_DIR_INNER" || {
-        log_error "Home Assistant 配置验证失败。请检查配置错误。您可能需要手动检查日志。"
+        log_error "小鸥智能 配置验证失败。请检查配置错误。您可能需要手动检查日志。"
     }
-    log_info "Home Assistant 基础配置验证完成。"
+    log_info "小鸥智能 基础配置验证完成。"
 
-    log_info "Home Assistant 安装和自定义配置部署完成！"
-    log_info "您可以现在激活虚拟环境并启动 Home Assistant： source $HA_INSTALL_DIR_INNER/bin/activate && $HASS_VENV_PATH_INNER -c $HA_CONFIG_DIR_INNER"
+    log_info "小鸥智能 安装和自定义配置部署完成！"
+    log_info "您可以现在激活虚拟环境并启动 小鸥智能： source $HA_INSTALL_DIR_INNER/bin/activate && $HASS_VENV_PATH_INNER -c $HA_CONFIG_DIR_INNER"
 EOF_INNER_SCRIPT
 
 # 替换内部脚本中的占位符
@@ -360,14 +362,14 @@ sed -i \
 # 赋予临时脚本执行权限
 sudo chmod +x "$TEMP_HA_SCRIPT"
 
-# 以 Home Assistant 用户身份执行临时脚本
+# 以 小鸥智能 用户身份执行临时脚本
 sudo -u "$HA_USER" bash "$TEMP_HA_SCRIPT" || log_error "以用户 '$HA_USER' 执行内部脚本失败。"
 
 # 清理临时脚本文件
 sudo rm -f "$TEMP_HA_SCRIPT"
 
 # 4. 创建 systemd 服务
-log_info "正在创建 systemd 服务以便 Home Assistant 开机自启..."
+log_info "正在创建 systemd 服务以便 小鸥智能 开机自启............."
 SYSTEMD_SERVICE_FILE="/etc/systemd/system/homeassistant@.service"
 sudo bash -c "cat > '$SYSTEMD_SERVICE_FILE'" <<EOL
 [Unit]
@@ -386,21 +388,21 @@ WantedBy=multi-user.target
 EOL
 
 sudo systemctl daemon-reload || log_error "无法重新加载 systemd daemon。"
-sudo systemctl enable homeassistant@"$HA_USER" || log_error "无法启用 Home Assistant systemd 服务。"
-sudo systemctl start homeassistant@"$HA_USER" || log_error "无法启动 Home Assistant systemd 服务。"
+sudo systemctl enable homeassistant@"$HA_USER" || log_error "无法启用 小鸥智能 systemd 服务。"
+sudo systemctl start homeassistant@"$HA_USER" || log_error "无法启动 小鸥智能 systemd 服务。"
 
-log_info "Home Assistant systemd 服务已创建并启动。您可以使用 'sudo systemctl status homeassistant@$HA_USER' 查看状态。"
-log_info "整个 Home Assistant 环境已设置完毕，并应用了您的自定义配置。"
+log_info "小鸥智能 systemd 服务已创建并启动。您可以使用 'sudo systemctl status homeassistant@$HA_USER' 查看状态。"
+log_info "整个 小鸥智能 环境已设置完毕，并应用了您的自定义配置。"
 log_info "首次启动可能需要一些时间来下载依赖和初始化。"
-log_info "您可以通过访问您服务器的 IP 地址:8123 来访问您的控制系统。"
+log_info "您可以通过访问您服务器的 IP 地址:1404 来访问您的控制系统。"
 
 # 等待启动并检查服务状态
-log_info "等待 Home Assistant 启动并检查服务状态..."
-sleep 30  # 等待启动
+log_info "等待 小鸥智能 启动并检查服务状态..........."
+sleep 40  # 等待启动
 if sudo systemctl is-active --quiet homeassistant@"$HA_USER"; then
-    log_info "Home Assistant 服务正在运行。"
-    log_info "您可以在浏览器中访问 http://$(hostname -I | awk '{print $1}'):8123 访问界面"
+    log_info "小鸥智能 服务正在运行。"
+    log_info "您可以在浏览器中访问 http://$(hostname -I | awk '{print $1}'):1404 访问界面"
 else
-    log_warn "Home Assistant 服务可能仍在启动中或遇到问题，请检查日志："
+    log_warn "小鸥智能 服务可能仍在启动中或遇到问题，请检查日志："
     sudo journalctl -u homeassistant@"$HA_USER" -f
 fi
