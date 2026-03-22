@@ -151,6 +151,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     wget -O py3.14.tar.gz "$HA_PYTHON3143_URL_INNER" || log_error "环境包无法下载"
     sleep 3
     log_info "环境包下载成功准备解压包.."
+    mkdir -p python3.14
     tar -xzf py3.14.tar.gz -C python3.14 --strip-components=1
     log_info "环境包解压成功......"
     log_info "...............开始设置环境..............."
