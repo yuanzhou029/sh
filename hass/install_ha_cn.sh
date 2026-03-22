@@ -368,7 +368,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "您可以现在激活虚拟环境并启动 小鸥智能： source $HA_INSTALL_DIR_INNER/bin/activate && $HASS_VENV_PATH_INNER -c $HA_CONFIG_DIR_INNER"
 EOF_INNER_SCRIPT
 
-# 替换内部脚本中的占位符
+# 替换内部脚本中的占位符 - 修正sed命令语法
 sed -i \
     -e "s|{{HA_INSTALL_DIR}}|$HA_INSTALL_DIR|g" \
     -e "s|{{HA_CONFIG_DIR}}|$HA_CONFIG_DIR|g" \
@@ -377,7 +377,7 @@ sed -i \
     -e "s|{{HA_MIRROR_CONFIG_SUBDIR}}|$HA_MIRROR_CONFIG_SUBDIR|g" \
     -e "s|{{PIP_MIRROR_URL}}|$PIP_MIRROR_URL|g" \
     -e "s|{{HA_WHEEL_URL}}|$HA_WHEEL_URL|g" \
-    -e "s|{{HA_PYTHON3143_URL}}|$HA_PYTHON3143_URL|g" \ 
+    -e "s|{{HA_PYTHON3143_URL}}|$HA_PYTHON3143_URL|g" \
     "$TEMP_HA_SCRIPT"
 
 # 赋予临时脚本执行权限
