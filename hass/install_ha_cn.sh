@@ -204,7 +204,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 下载 zip 文件
     log_info "正在下载 小鸥智能 安装主包: $HA_WHEEL_URL_INNER"
-    wget --no-check-certificate "$HA_WHEEL_URL_INNER" -O homeassistant_artifacts.zip || log_error "无法下载 小鸥智能 安装主包 文件。"
+    wget --no-check-certificate "$HA_WHEEL_URL_INNER" -O xoai_artifacts.zip || log_error "无法下载 小鸥智能 安装主包 文件。"
     
     # 获取下载文件大小
     FILE_SIZE=$(du -h xoai_artifacts.zip | cut -f1)
