@@ -148,7 +148,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 安装python3.14环境
     log_info "正在创建 Python3.14环境 目前python3.14不需要安装虚拟环境依赖包......"
-    wget -O py3.14.tar.gz "$$HA_PYTHON3143_URL_INNER" || log_error "环境包无法下载"
+    wget -O py3.14.tar.gz "$HA_PYTHON3143_URL_INNER" || log_error "环境包无法下载"
     sleep 3
     log_info "环境包下载成功准备解压包.."
     tar -xzf py3.14.tar.gz -C python3.14 --strip-components=1
