@@ -18,18 +18,17 @@ HA_USER="zych_ha"
 HA_INSTALL_DIR="/srv/$HA_USER"
 # 的配置目录 
 HA_CONFIG_DIR="/home/$HA_USER/.xoai"
-# 您的 ha-mirror 仓库的 Git URL
+# 配置仓库地址
 HA_MIRROR_REPO="https://pxy.140407.xyz/https://github.com/yuanzhou029/ha-mirror.git"
-# ha-mirror 仓库中包含配置文件的子目录名称
+# 配置仓库中包含配置文件的子目录名称
 HA_MIRROR_CONFIG_SUBDIR="config"
+# 这个是python3,14环境包
 HA_PYTHON3143_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/sh/releases/download/3.14.3/python-3.14.3-linux-x86_64.tar.gz"
-# --- 国内镜像源配置 ---
-# PyPI 镜像源 (选择一个稳定且速度快的)
-# 推荐使用清华大学或阿里云
+# 这个是pypi镜像源（目前使用华为的当然也可以换任意国内镜像源）
 PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple"
-
-# GitHub Actions artifacts 下载 URL(安装程序主包)
-HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/xoai-v20260321.2/xoai-2026.3.3-py3-none-any.zip"
+# 下载 URL(安装程序主包)
+# 这是主包的地址：千万不要搞错了
+HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/xoai-v20260322.0/xoai-2026.3.3-py3-none-any.zip"
 
 # --- 函数定义 ---
 log_info() {
