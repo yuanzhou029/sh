@@ -237,7 +237,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     sleep 1
     
     # 查找 小鸥智能 安装主包 文件
-    WHEEL_FILE=$(find . -name "install.sh" | head -n 1)
+    WHEEL_FILE=$(find . -name "*.whl" | head -n 1)
     DEPENDENCIES_DIR=$(find . -name "dependencies" -type d | head -n 1)
     
     if [ -z "$WHEEL_FILE" ]; then
@@ -267,6 +267,9 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 复制 小鸥智能 安装主包 文件到虚拟环境目录
     cp "$TEMP_DOWNLOAD_DIR/$WHEEL_FILE" . || log_error "无法复制 小鸥智能 安装主包 文件。"
     log_info "已将 小鸥智能 安装主包 文件复制到: $HA_INSTALL_DIR_INNER/$(basename "$WHEEL_FILE")"
+    sleep 1
+    cp "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR" . || log_error "无法复制 小鸥智能 依赖包 文件。"
+    log_info "已将 小鸥智能 依赖包文件夹 复制到: $HA_INSTALL_DIR_INNER/$(basename "$DEPENDENCIES_DIR")"
     sleep 3
     
     
@@ -282,9 +285,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 安装 小鸥智能 安装主包 文件
     log_info "正在安装 小鸥智能 安装主包: $(basename "$WHEEL_FILE")"
-    chmod +x install.sh
-    bash install.sh
-    # pip install "$(basename "$WHEEL_FILE")" --find-links dependencies/ --prefer-binary || log_error "无法安装 小鸥智能 安装主包。"
+    pip install "$(basename "$WHEEL_FILE")" --find-links dependencies/ --prefer-binary || log_error "无法安装 小鸥智能 安装主包。"
     log_info "小鸥智能 安装主包 安装成功。"
     sleep 5
 
