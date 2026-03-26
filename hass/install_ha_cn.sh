@@ -268,7 +268,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     cp "$TEMP_DOWNLOAD_DIR/$WHEEL_FILE" . || log_error "无法复制 小鸥智能 安装主包 文件。"
     log_info "已将 小鸥智能 安装主包 文件复制到: $HA_INSTALL_DIR_INNER/$(basename "$WHEEL_FILE")"
     sleep 1
-    cp "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR" . || log_error "无法复制 小鸥智能 依赖包 文件。"
+    cp -r "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR" . || log_error "无法复制 小鸥智能 依赖包 文件。"
     log_info "已将 小鸥智能 依赖包文件夹 复制到: $HA_INSTALL_DIR_INNER/$(basename "$DEPENDENCIES_DIR")"
     sleep 3
     
