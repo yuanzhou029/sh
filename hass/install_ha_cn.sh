@@ -19,7 +19,7 @@ HA_INSTALL_DIR="/srv/$HA_USER"
 # 的配置目录 
 HA_CONFIG_DIR="/home/$HA_USER/.homeassistant"
 # 配置仓库地址
-HA_MIRROR_REPO="https://pxy.140407.xyz/https://github.com/yuanzhou029/ha-mirror.git"
+HA_MIRROR_REPO="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/ha-mirror.git"
 # 配置仓库中包含配置文件的子目录名称
 HA_MIRROR_CONFIG_SUBDIR="config"
 # 这个是python3,14环境包
