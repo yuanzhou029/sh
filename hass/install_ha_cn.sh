@@ -291,7 +291,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     ADDITIONAL_PACKAGES=(
         "colorlog==6.10.1"
         "PyQRCode==1.2.1"
-        "xoai-frontend==20260322.0"
+        "home-assistant-frontend==20260325.0"
         "pymicro-vad==1.0.1"
         "pyspeex-noise==1.0.2"
         "mutagen==1.47.0"
