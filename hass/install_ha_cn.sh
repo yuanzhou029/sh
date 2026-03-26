@@ -28,7 +28,7 @@ HA_PYTHON3143_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029
 PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple"
 # 下载 URL(安装程序主包)
 # 这是主包的地址：千万不要搞错了
-HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/xoai-v20260326.0/xoai-2026.3.26.2-py3-none-any.complete.zip"
+HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/xoai-core/releases/download/v2026.3.26.1/xoai-core-backend-2026.3.26.1-complete.zip"
 
 # --- 函数定义 ---
 log_info() {
@@ -237,7 +237,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     sleep 1
     
     # 查找 小鸥智能 安装主包 文件
-    WHEEL_FILE=$(find . -name "*.whl" | head -n 1)
+    WHEEL_FILE=$(find . -name "install.sh" | head -n 1)
     DEPENDENCIES_DIR=$(find . -name "dependencies" -type d | head -n 1)
     
     if [ -z "$WHEEL_FILE" ]; then
@@ -282,7 +282,9 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 安装 小鸥智能 安装主包 文件
     log_info "正在安装 小鸥智能 安装主包: $(basename "$WHEEL_FILE")"
-    pip install "$(basename "$WHEEL_FILE")" --find-links dependencies/ --prefer-binary || log_error "无法安装 小鸥智能 安装主包。"
+    chmod +x install.sh
+    bash install.sh
+    # pip install "$(basename "$WHEEL_FILE")" --find-links dependencies/ --prefer-binary || log_error "无法安装 小鸥智能 安装主包。"
     log_info "小鸥智能 安装主包 安装成功。"
     sleep 5
 
