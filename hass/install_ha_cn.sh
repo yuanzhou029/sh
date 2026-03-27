@@ -337,7 +337,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "openai==2.21.0"
         "matter-python-client==0.4.1"
         "dbus-fast==3.1.2"
-        "habluetooth==5.10.2"
+        "habluetooth==5.11.1"
         "aiohasupervisor==0.4.3"
         
     )
