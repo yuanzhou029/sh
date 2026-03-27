@@ -300,7 +300,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "mutagen==1.47.0"
         "ha-ffmpeg==3.2.2"
         "hassil==3.5.0"
-        "home-assistant-intents==2026.3.3"
+        "home-assistant-intents==2026.3.24"
         "PyTurboJPEG==1.8.0"
         "av==16.0.1"
         "go2rtc-client==0.4.0"
@@ -338,6 +338,8 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "matter-python-client==0.4.1"
         "dbus-fast==3.1.2"
         "habluetooth==5.10.2"
+        "aiohasupervisor==0.4.3"
+        
     )
     
     for pkg in "${ADDITIONAL_PACKAGES[@]}"; do
