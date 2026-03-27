@@ -238,7 +238,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 查找 小鸥智能 安装主包 文件
     WHEEL_FILE=$(find . -name "*.whl" | head -n 1)
-    xoai_zych_DIR=$(find . -name "xoai_zych" -type d | head -n 1)
+    DEPENDENCIES_DIR_DIR=$(find . -name "xoai_zych" -type d | head -n 1)
     
     if [ -z "$WHEEL_FILE" ]; then
         log_error "未找到 小鸥智能 安装主包 文件。"
@@ -246,13 +246,13 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     log_info "找到 小鸥智能 安装主包 文件: $WHEEL_FILE"
     
-    if [ -n "$xoai_zych_DIR" ]; then
-        DEP_COUNT=$(ls "$xoai_zych_DIR"/*.whl 2>/dev/null | wc -l)
-        log_info "找到 xoai_zych 目录: $xoai_zych_DIR (包含 $DEP_COUNT 个 wheel 文件)"
+    if [ -n "$DEPENDENCIES_DIR_DIR" ]; then
+        DEP_COUNT=$(ls "$DEPENDENCIES_DIR_DIR"/*.whl 2>/dev/null | wc -l)
+        log_info "找到 xoai_zych 目录: $DEPENDENCIES_DIR_DIR (包含 $DEP_COUNT 个 wheel 文件)"
     else
         log_warn "未找到 xoai_zych 目录，可能不需要额外依赖。"
         mkdir -p xoai_zych
-        xoai_zych_DIR="xoai_zych"
+        DEPENDENCIES_DIR_DIR="xoai_zych"
     fi
     
     # 返回到虚拟环境目录
@@ -268,8 +268,8 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     cp "$TEMP_DOWNLOAD_DIR/$WHEEL_FILE" . || log_error "无法复制 小鸥智能 安装主包 文件。"
     log_info "已将 小鸥智能 安装主包 文件复制到: $HA_INSTALL_DIR_INNER/$(basename "$WHEEL_FILE")"
     sleep 1
-    cp -r "$TEMP_DOWNLOAD_DIR/$xoai_zych_DIR" . || log_error "无法复制 小鸥智能 依赖包 文件。"
-    log_info "已将 小鸥智能 依赖包文件夹 复制到: $HA_INSTALL_DIR_INNER/$(basename "$xoai_zych_DIR")"
+    cp -r "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR_DIR" . || log_error "无法复制 小鸥智能 依赖包 文件。"
+    log_info "已将 小鸥智能 依赖包文件夹 复制到: $HA_INSTALL_DIR_INNER/$(basename "$DEPENDENCIES_DIR_DIR")"
     sleep 3
     
     
