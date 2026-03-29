@@ -13,7 +13,7 @@ sleep 5
 
 # --- 配置参数 ---
 #  运行的用户
-HA_USER="zych_ha"
+HA_USER="zych_HA"
 #  的安装目录 (虚拟环境将在此处创建)
 HA_INSTALL_DIR="/srv/$HA_USER"
 # 的配置目录 
