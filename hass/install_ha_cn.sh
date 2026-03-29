@@ -385,7 +385,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     sleep 1
     
     # 确保配置目录的权限正确
-    chown -R "$HA_USER_INNER":"$HA_USER_INNER" "$HA_CONFIG_DIR_INNER" || log_error "无法设置配置目录权限。"
+  #  chown -R "$HA_USER_INNER":"$HA_USER_INNER" "$HA_CONFIG_DIR_INNER" || log_error "无法设置配置目录权限。"
     log_info "自定义配置和组件部署成功。"
 
     # 3.8 验证配置 (可选，但强烈推荐)
