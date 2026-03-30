@@ -28,7 +28,7 @@ HA_PYTHON3143_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029
 PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple"
 # 下载 URL(安装程序主包)
 # 这是主包的地址：千万不要搞错了
-HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/xoai-core/releases/download/xoai-v2026.3.30.1/xoai-complete-wheels.zip"
+HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/xoai-core/releases/download/xoai-v2026.3.30.2/xoai-complete-wheels.zip"
 
 # --- 函数定义 ---
 log_info() {
