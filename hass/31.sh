@@ -196,7 +196,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 查找 小鸥智能 安装主包 文件
     WHEEL_FILE=$(find . -name "*.whl" | head -n 1)
-    DEPENDENCIES_DIR=$(find . -name "zych_ha" -type d | head -n 1)
+    DEPENDENCIES_DIR=$(find . -name "xoai_zych" -type d | head -n 1)
     
     if [ -z "$WHEEL_FILE" ]; then
         log_error "未找到 小鸥智能 安装主包 文件。"
@@ -206,30 +206,30 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     if [ -n "$DEPENDENCIES_DIR" ]; then
         DEP_COUNT=$(ls "$DEPENDENCIES_DIR"/*.whl 2>/dev/null | wc -l)
-        log_info "找到 zych_ha 目录: $DEPENDENCIES_DIR (包含 $DEP_COUNT 个 wheel 文件)"
+        log_info "找到 xoai_zych 目录: $DEPENDENCIES_DIR (包含 $DEP_COUNT 个 wheel 文件)"
     else
-        log_warn "未找到 zych_ha 目录，可能不需要额外依赖。"
-        mkdir -p zych_ha
-        DEPENDENCIES_DIR="zych_ha"
+        log_warn "未找到 xoai_zych 目录，可能不需要额外依赖。"
+        mkdir -p xoai_zych
+        DEPENDENCIES_DIR="xoai_zych"
     fi
     
     # 返回到虚拟环境目录
     cd "$HA_INSTALL_DIR_INNER"
     
-    # 创建 zych_ha 目录并复制文件
-    if [ ! -d "zych_ha" ]; then
-        mkdir -p zych_ha
+    # 创建 xoai_zych 目录并复制文件
+    if [ ! -d "xoai_zych" ]; then
+        mkdir -p xoai_zych
     fi
     
     # 复制 小鸥智能 安装主包 文件到虚拟环境目录
     cp "$TEMP_DOWNLOAD_DIR/$WHEEL_FILE" . || log_error "无法复制 小鸥智能 安装主包 文件。"
     log_info "已将 小鸥智能 安装主包 文件复制到: $HA_INSTALL_DIR_INNER/$(basename "$WHEEL_FILE")"
     
-    # 复制 zych_ha 目录中的文件（逐个复制以节省空间）
+    # 复制 xoai_zych 目录中的文件（逐个复制以节省空间）
     log_info "正在复制依赖文件..."
     if [ -d "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR" ]; then
-        cp -r "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR"/* zych_ha/ 2>/dev/null || true
-        log_info "已将依赖文件复制到: $HA_INSTALL_DIR_INNER/zych_ha/"
+        cp -r "$TEMP_DOWNLOAD_DIR/$DEPENDENCIES_DIR"/* xoai_zych/ 2>/dev/null || true
+        log_info "已将依赖文件复制到: $HA_INSTALL_DIR_INNER/xoai_zych/"
     fi
     
     # 清理临时下载目录
@@ -240,7 +240,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 安装 小鸥智能 安装主包 文件
     log_info "正在安装 小鸥智能 安装主包: $(basename "$WHEEL_FILE")"
-    pip install "$(basename "$WHEEL_FILE")" --find-links zych_ha/ --prefer-binary || log_error "无法安装 小鸥智能 安装主包。"
+    pip install "$(basename "$WHEEL_FILE")" --find-links xoai_zych/ --prefer-binary || log_error "无法安装 小鸥智能 安装主包。"
     
     log_info "小鸥智能 安装主包 安装成功。"
 
