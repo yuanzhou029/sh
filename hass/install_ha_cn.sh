@@ -294,6 +294,9 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     ADDITIONAL_PACKAGES=(
         "home-assistant-frontend==20260325.2"
         "av==16.0.1"
+        "openai==2.21.0"
+        "PyTurboJPEG==1.8.0"
+        
     )
     
     for pkg in "${ADDITIONAL_PACKAGES[@]}"; do
