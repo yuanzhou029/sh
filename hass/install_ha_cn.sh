@@ -28,7 +28,7 @@ HA_PYTHON3143_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029
 PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple"
 # 下载 URL(安装程序主包)
 # 这是主包的地址：千万不要搞错了
-HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/xoai-core/releases/download/xoai-v2026.3.31.7/xoai-complete-wheels.zip"
+HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/xoai-core/releases/download/xoai-v20260328.0/xoai-complete-wheels.zip"
 
 # --- 函数定义 ---
 log_info() {
@@ -292,11 +292,6 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 新增步骤：预安装 小鸥智能 安装主包 运行时可能需要的特定依赖
     log_info "正在预安装 小鸥智能 安装主包 配置验证时可能需要的额外依赖..............."
     ADDITIONAL_PACKAGES=(
-        "libpcap0.8 -y"
-        "libpcap0.8-dev -y"
-        "ffmpeg -y"
-        "libturbojpeg0 -y"
-        "rsync"
         "libpcap"
         "home-assistant-frontend==20260325.2"
         "numpy==2.3.2"
