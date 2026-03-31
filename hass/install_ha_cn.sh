@@ -293,6 +293,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "正在预安装 小鸥智能 安装主包 配置验证时可能需要的额外依赖..............."
     ADDITIONAL_PACKAGES=(
         "home-assistant-frontend==20260325.2"
+        "av==16.0.1"
     )
     
     for pkg in "${ADDITIONAL_PACKAGES[@]}"; do
