@@ -315,6 +315,10 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "bluetooth-adapters==2.1.0"
         "habluetooth==5.8.0"
         "aiousbwatcher==1.1.1"
+        "pyserial==3.5"
+        "async-upnp-client==0.46.2"
+        "dbus-fast==3.1.2"
+        "go2rtc-client==0.4.0"
         
     )
     
