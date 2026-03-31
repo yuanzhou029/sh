@@ -296,6 +296,8 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "av==16.0.1"
         "openai==2.21.0"
         "PyTurboJPEG==1.8.0"
+        "colorlog==6.10.1"
+        
         
     )
     
