@@ -292,6 +292,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 新增步骤：预安装 小鸥智能 安装主包 运行时可能需要的特定依赖
     log_info "正在预安装 小鸥智能 安装主包 配置验证时可能需要的额外依赖..............."
     ADDITIONAL_PACKAGES=(
+        "libpcap"
         "home-assistant-frontend==20260325.2"
         "numpy==2.3.2"
         "av==16.0.1"
