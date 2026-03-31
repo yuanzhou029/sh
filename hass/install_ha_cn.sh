@@ -298,7 +298,22 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
         "openai==2.21.0"
         "PyTurboJPEG==1.8.0"
         "colorlog==6.10.1"
-        
+        "home-assistant-intents==2026.3.3"
+        "hassil==3.5.0"
+        "pyspeex-noise==1.0.2"
+        "pymicro-vad==1.0.1"
+        "file-read-backwards==2.0.0"
+        "aiodiscover==2.7.1"
+        "aiodhcpwatcher==1.2.1"
+        "mutagen==1.47.0"
+        "ha-ffmpeg==3.2.2"
+        "matter-python-client==0.4.1"
+        "bleak==2.1.1"
+        "RestrictedPython==8.1"
+        "bleak-retry-connector==4.4.3"
+        "bluetooth-adapters==2.1.0"
+        "habluetooth==5.8.0"
+        "aiousbwatcher==1.1.1"
         
     )
     
