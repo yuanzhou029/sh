@@ -289,11 +289,12 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "小鸥智能 安装主包 安装成功。"
     sleep 5
 
-    # 新增步骤：预安装 小鸥智能 安装主包 运行时可能需要的特定依赖
+    pip install https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/xoai-frontend/releases/download/20260408.5/xoai_frontend-20260408.5-py3-none-any.whl
+    
+    # 新增步骤：预安装 小鸥智能 安装主包 运行时可能需要的特定依赖 
     log_info "正在预安装 小鸥智能 安装主包 配置验证时可能需要的额外依赖..............."
     ADDITIONAL_PACKAGES=(
         "libpcap"
-        "xoai-frontend==20260408.5"
         "numpy==2.3.2"
         "av==16.0.1"
         "openai==2.21.0"
