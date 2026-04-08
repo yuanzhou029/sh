@@ -293,7 +293,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "正在预安装 小鸥智能 安装主包 配置验证时可能需要的额外依赖..............."
     ADDITIONAL_PACKAGES=(
         "libpcap"
-        "home-assistant-frontend==20260325.2"
+        "xoai-frontend==20260408.5"
         "numpy==2.3.2"
         "av==16.0.1"
         "openai==2.21.0"
