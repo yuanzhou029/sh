@@ -36,7 +36,9 @@ echo 'sources.list 修改完成。'
 # --- 结束：修改更新源 ---
 sleep 1
 # 更新包列表并安装sudo
-apt update && apt install -y sudo
+apt update && apt upgrade
+sleep 1
+apt install -y sudo
 
 # 将hass用户添加到sudo组
 export PATH=\$PATH:/usr/sbin:/sbin:/usr/local/sbin
