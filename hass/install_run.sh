@@ -36,7 +36,8 @@ echo 'sources.list 修改完成。'
 # --- 结束：修改更新源 ---
 sleep 1
 # 更新包列表并安装sudo
-apt update && apt upgrade
+apt update
+apt upgrade -y
 sleep 1
 apt install -y sudo
 
