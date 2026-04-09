@@ -23,7 +23,7 @@ HA_MIRROR_REPO="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/ha
 # 配置仓库中包含配置文件的子目录名称
 HA_MIRROR_CONFIG_SUBDIR="config"
 # 这个是python3,14环境包
-HA_PYTHON3143_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/sh/releases/download/3.14.3/python-3.14.3-linux-x86_64.tar.gz"
+HA_PYTHON3143_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/PY3.14/python-3.14.3-linux-x86_64.tar.gz"
 # 这个是pypi镜像源（目前使用华为的当然也可以换任意国内镜像源）
 PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple"
 # 下载 URL(安装程序主包)
