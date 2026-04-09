@@ -355,16 +355,16 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     #sleep 3
 
     # 3.7 部署自定义配置和组件 (来自 默认配置 的 config 目录)
-    log_info "正在部署自定义配置和组件到 小鸥智能  配置目录 '$HA_CONFIG_DIR_INNER'..."
-    mkdir -p "$HA_CONFIG_DIR_INNER" || log_error "无法创建 小鸥智能 配置目录。"
+    #log_info "正在部署自定义配置和组件到 小鸥智能  配置目录 '$HA_CONFIG_DIR_INNER'..."
+    #mkdir -p "$HA_CONFIG_DIR_INNER" || log_error "无法创建 小鸥智能 配置目录。"
     
     # 复制 ha-mirror/config 中的内容到 HA_CONFIG_DIR_INNER
-    cp -r "$HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_MIRROR_CONFIG_SUBDIR_INNER"/* "$HA_CONFIG_DIR_INNER/" || log_error "无法复制自定义配置。"
-    sleep 1
+    #cp -r "$HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_MIRROR_CONFIG_SUBDIR_INNER"/* "$HA_CONFIG_DIR_INNER/" || log_error "无法复制自定义配置。"
+    #sleep 1
     
     # 确保配置目录的权限正确
-    chown -R "$HA_USER_INNER":"$HA_USER_INNER" "$HA_CONFIG_DIR_INNER" || log_error "无法设置配置目录权限。"
-    log_info "自定义配置和组件部署成功。"
+    #chown -R "$HA_USER_INNER":"$HA_USER_INNER" "$HA_CONFIG_DIR_INNER" || log_error "无法设置配置目录权限。"
+    #log_info "自定义配置和组件部署成功。"
 
     # 3.8 验证配置 (可选，但强烈推荐)
     log_info "正在验证 小鸥智能 配置..."
