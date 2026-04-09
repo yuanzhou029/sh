@@ -82,8 +82,8 @@ log_info "正在检查磁盘空间..."
 check_disk_space 3 "/srv/zych_ha"  # 需要至少 3GB 空间
 
 # 0. 检查并安装必要工具
-log_info "正在检查并安装必要的系统工具 (python3-venv, git, build-essential, python3-dev, wget, unzip)..."
-REQUIRED_TOOLS=("git" "build-essential" "python3-dev" "wget" "unzip")
+log_info "正在检查并安装必要的系统工具 （git, build-essential, wget, unzip)..."
+REQUIRED_TOOLS=("git" "build-essential" "wget" "unzip")
 for tool in "${REQUIRED_TOOLS[@]}"; do
     if ! dpkg -s "$tool" &>/dev/null; then
         log_info "$tool 未安装，正在尝试安装..."
