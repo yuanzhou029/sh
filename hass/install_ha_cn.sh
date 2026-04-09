@@ -339,20 +339,20 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     sleep 2
 
     # 3.6 克隆 ha-mirror 仓库 (用于获取自定义配置)
-    log_info "正在克隆或更新 小鸥智能 默认配置  '$HA_INSTALL_DIR_INNER/远程仓库'.........."
-    CLONE_URL_INNER="$HA_MIRROR_REPO_INNER"
+    #log_info "正在克隆或更新 小鸥智能 默认配置  '$HA_INSTALL_DIR_INNER/远程仓库'.........."
+    #CLONE_URL_INNER="$HA_MIRROR_REPO_INNER"
 
-    if [ ! -d "$HA_INSTALL_DIR_INNER/ha-mirror-repo" ]; then
-        git clone "$CLONE_URL_INNER" "$HA_INSTALL_DIR_INNER/ha-mirror-repo" || log_error "无法克隆 默认配置 。请检查 Git 代理或仓库地址。"
-        log_info "默认配置 克隆成功。"
-    else
-        log_info "ha-mirror 仓库已存在，正在执行 'git pull' 更新。"
-        cd "$HA_INSTALL_DIR_INNER/ha-mirror-repo"
-        git pull || log_error "无法更新 ha-mirror 仓库。请检查 Git 代理或仓库地址。"
-        cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
-        log_info "ha-mirror 仓库更新成功。"
-    fi
-    sleep 3
+    #if [ ! -d "$HA_INSTALL_DIR_INNER/ha-mirror-repo" ]; then
+       # git clone "$CLONE_URL_INNER" "$HA_INSTALL_DIR_INNER/ha-mirror-repo" || log_error "无法克隆 默认配置 。请检查 Git 代理或仓库地址。"
+        #log_info "默认配置 克隆成功。"
+    #else
+        #log_info "ha-mirror 仓库已存在，正在执行 'git pull' 更新。"
+        #cd "$HA_INSTALL_DIR_INNER/ha-mirror-repo"
+        #git pull || log_error "无法更新 ha-mirror 仓库。请检查 Git 代理或仓库地址。"
+        #cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
+        #log_info "ha-mirror 仓库更新成功。"
+    #fi
+    #sleep 3
 
     # 3.7 部署自定义配置和组件 (来自 默认配置 的 config 目录)
     log_info "正在部署自定义配置和组件到 小鸥智能  配置目录 '$HA_CONFIG_DIR_INNER'..."
