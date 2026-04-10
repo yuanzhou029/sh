@@ -17,7 +17,7 @@ HA_USER="zych_ha"
 #  的安装目录 (虚拟环境将在此处创建)
 HA_INSTALL_DIR="/srv/$HA_USER"
 # 的配置目录 
-HA_CONFIG_DIR="/home/$HA_USER/.xoai"
+HA_CONFIG_DIR="/home/$HA_USER/.homeassistant"
 # 配置仓库地址
 HA_MIRROR_REPO="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/ha-mirror.git"
 # 配置仓库中包含配置文件的子目录名称
@@ -339,34 +339,34 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     sleep 2
 
     # 3.6 克隆 ha-mirror 仓库 (用于获取自定义配置)
-    #log_info "正在克隆或更新 小鸥智能 默认配置  '$HA_INSTALL_DIR_INNER/远程仓库'.........."
-    #CLONE_URL_INNER="$HA_MIRROR_REPO_INNER"
+    log_info "正在克隆或更新 小鸥智能 默认配置  '$HA_INSTALL_DIR_INNER/远程仓库'.........."
+    CLONE_URL_INNER="$HA_MIRROR_REPO_INNER"
 
-    #if [ ! -d "$HA_INSTALL_DIR_INNER/ha-mirror-repo" ]; then
-       # git clone "$CLONE_URL_INNER" "$HA_INSTALL_DIR_INNER/ha-mirror-repo" || log_error "无法克隆 默认配置 。请检查 Git 代理或仓库地址。"
-        #log_info "默认配置 克隆成功。"
-    #else
-        #log_info "ha-mirror 仓库已存在，正在执行 'git pull' 更新。"
-        #cd "$HA_INSTALL_DIR_INNER/ha-mirror-repo"
-        #git pull || log_error "无法更新 ha-mirror 仓库。请检查 Git 代理或仓库地址。"
-        #cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
-        #log_info "ha-mirror 仓库更新成功。"
-    #fi
-    #sleep 3
+    if [ ! -d "$HA_INSTALL_DIR_INNER/ha-mirror-repo" ]; then
+        git clone "$CLONE_URL_INNER" "$HA_INSTALL_DIR_INNER/ha-mirror-repo" || log_error "无法克隆 默认配置 。请检查 Git 代理或仓库地址。"
+        log_info "默认配置 克隆成功。"
+    else
+        log_info "ha-mirror 仓库已存在，正在执行 'git pull' 更新。"
+        cd "$HA_INSTALL_DIR_INNER/ha-mirror-repo"
+        git pull || log_error "无法更新 ha-mirror 仓库。请检查 Git 代理或仓库地址。"
+        cd "$HA_INSTALL_DIR_INNER" # 返回到虚拟环境的根目录
+        log_info "ha-mirror 仓库更新成功。"
+    fi
+    sleep 3
 
-    # 3.7 部署自定义配置和组件 (来自 默认配置 的 config 目录)
-    #log_info "正在部署自定义配置和组件到 小鸥智能  配置目录 '$HA_CONFIG_DIR_INNER'..."
-    #mkdir -p "$HA_CONFIG_DIR_INNER" || log_error "无法创建 小鸥智能 配置目录。"
+    3.7 部署自定义配置和组件 (来自 默认配置 的 config 目录)
+    log_info "正在部署自定义配置和组件到 小鸥智能  配置目录 '$HA_CONFIG_DIR_INNER'..."
+    mkdir -p "$HA_CONFIG_DIR_INNER" || log_error "无法创建 小鸥智能 配置目录。"
     
-    # 复制 ha-mirror/config 中的内容到 HA_CONFIG_DIR_INNER
-    #cp -r "$HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_MIRROR_CONFIG_SUBDIR_INNER"/* "$HA_CONFIG_DIR_INNER/" || log_error "无法复制自定义配置。"
-    #sleep 1
+    复制 ha-mirror/config 中的内容到 HA_CONFIG_DIR_INNER
+    cp -r "$HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_MIRROR_CONFIG_SUBDIR_INNER"/* "$HA_CONFIG_DIR_INNER/" || log_error "无法复制自定义配置。"
+    sleep 1
     
-    # 确保配置目录的权限正确
-    #chown -R "$HA_USER_INNER":"$HA_USER_INNER" "$HA_CONFIG_DIR_INNER" || log_error "无法设置配置目录权限。"
-    #log_info "自定义配置和组件部署成功。"
+    确保配置目录的权限正确
+    chown -R "$HA_USER_INNER":"$HA_USER_INNER" "$HA_CONFIG_DIR_INNER" || log_error "无法设置配置目录权限。"
+    log_info "自定义配置和组件部署成功。"
 
-    # 3.8 验证配置 (可选，但强烈推荐)
+    3.8 验证配置 (可选，但强烈推荐)
     log_info "正在验证 小鸥智能 配置..."
     # 修改这里：在验证配置之前，确保环境变量已设置
     export LD_LIBRARY_PATH=$(pwd)/python3.14/lib:$LD_LIBRARY_PATH
