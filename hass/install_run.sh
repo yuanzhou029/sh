@@ -58,7 +58,7 @@ sudo apt install rsync
 sleep 3
 
 # 以下是原始脚本的后续操作
-wget -O 11.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/11.sh && chmod +x 11.sh && bash 11.sh
+wget -O 111.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/111.sh && chmod +x 111.sh && bash 111.sh
 sleep 5
 #wget -O set_static_ip.sh https://url.yh-iot.cloudns.org/https://raw.githubusercontent.com/yuanzhou029/sh/refs/heads/main/hass/set_static_ip.sh && chmod +x set_static_ip.sh && bash set_static_ip.sh
 rm -f set_static_ip.sh
