@@ -296,32 +296,6 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     # 新增步骤：预安装 小鸥智能 安装主包 运行时可能需要的特定依赖 
     log_info "正在预安装 小鸥智能 安装主包 配置验证时可能需要的额外依赖..............."
     ADDITIONAL_PACKAGES=(
-        "numpy==2.3.2"
-        "xoai-frontend==20260408.5"
-        "av==16.0.1"
-        "openai==2.21.0"
-        "PyTurboJPEG==1.8.0"
-        "colorlog==6.10.1"
-        "home-assistant-intents==2026.3.3"
-        "hassil==3.5.0"
-        "pyspeex-noise==1.0.2"
-        "pymicro-vad==1.0.1"
-        "file-read-backwards==2.0.0"
-        "aiodiscover==2.7.1"
-        "aiodhcpwatcher==1.2.1"
-        "mutagen==1.47.0"
-        "ha-ffmpeg==3.2.2"
-        "matter-python-client==0.4.1"
-        "bleak==2.1.1"
-        "RestrictedPython==8.1"
-        "bleak-retry-connector==4.4.3"
-        "bluetooth-adapters==2.1.0"
-        "habluetooth==5.8.0"
-        "aiousbwatcher==1.1.1"
-        "pyserial==3.5"
-        "async-upnp-client==0.46.2"
-        "dbus-fast==3.1.2"
-        "go2rtc-client==0.4.0"
         
     )
     
@@ -363,7 +337,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "正在创建 小鸥智能  配置目录 '$HA_CONFIG_DIR_INNER'..."
     mkdir -p "$HA_CONFIG_DIR_INNER" || log_error "无法创建 小鸥智能 配置目录。"
     
-    if [ "$USE_PRESET_CONFIG_INNER" = "true" ]; then
+    if [ "$USE_PRESET_CONFIG_INNER" = "false" ]; then
         log_info "正在部署预设自定义配置和组件到 小鸥智能  配置目录..."
         # 复制 ha-mirror/config 中的内容到 HA_CONFIG_DIR_INNER（但排除 .storage 目录）
         rsync -av --exclude='.storage/' "$HA_INSTALL_DIR_INNER/ha-mirror-repo/$HA_MIRROR_CONFIG_SUBDIR_INNER/"* "$HA_CONFIG_DIR_INNER/" || log_warn "无法复制部分自定义配置。"
