@@ -16,7 +16,7 @@ HA_MIRROR_CONFIG_SUBDIR="config"
 HA_PYTHON3143_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/sh/releases/download/3.14.3/python-3.14.3-linux-x86_64.tar.gz"
 PIP_MIRROR_URL="https://repo.huaweicloud.com/repository/pypi/simple"
 # 核心主包地址
-HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/xoai-20260409/xoai.zip"
+HA_WHEEL_URL="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/APK/releases/download/xoai-20260409/xoai-all-in-one-amd64.zip"
 
 log_info() { echo "INFO: $1"; }
 log_warn() { echo "WARN: $1"; }
