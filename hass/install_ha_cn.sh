@@ -17,7 +17,7 @@ HA_USER="zych_ha"
 #  的安装目录 (虚拟环境将在此处创建)
 HA_INSTALL_DIR="/srv/$HA_USER"
 # 的配置目录 
-HA_CONFIG_DIR="/home/$HA_USER/.homeassistant"
+HA_CONFIG_DIR="/home/$HA_USER/.xiaoozn_core"
 # 配置仓库地址
 HA_MIRROR_REPO="https://url.yh-iot.cloudns.org/https://github.com/yuanzhou029/ha-mirror.git"
 # 配置仓库中包含配置文件的子目录名称
