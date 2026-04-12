@@ -237,7 +237,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     sleep 1
     
     # 查找 小鸥智能 安装主包 文件
-    WHEEL_FILE=$(find . -name "xoai_core-*.whl" | head -n 1)
+    WHEEL_FILE=$(find . -name "xiaoozn_core-*.whl" | head -n 1)
     DEPENDENCIES_DIR_DIR=$(find . -name "xoai_zych" -type d | head -n 1)
     
     if [ -z "$WHEEL_FILE" ]; then
