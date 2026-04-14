@@ -158,7 +158,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 安装python3.14环境
     log_info "正在创建 Python3.14环境 目前python3.14不需要安装虚拟环境依赖包......"
-    wget -O py3.14.tar.gz "$HA_PYTHON3143_URL_INNER" || log_error "环境包无法下载"
+    wget --quiet --show-progress -O py3.14.tar.gz "$HA_PYTHON3143_URL_INNER" || log_error "环境包无法下载"
     sleep 1
     log_info "环境包下载成功准备解压包.."
     mkdir -p python3.14
@@ -223,7 +223,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     
     # 下载 zip 文件
     log_info "正在下载 小鸥智能 安装主包: $HA_WHEEL_URL_INNER"
-    wget --no-check-certificate "$HA_WHEEL_URL_INNER" -O xoai_artifacts.zip || log_error "无法下载 小鸥智能 安装主包 文件。"
+    wget --quiet --show-progress "$HA_WHEEL_URL_INNER" -O xoai_artifacts.zip || log_error "无法下载 小鸥智能 安装主包 文件。"
     sleep 3
     
     # 获取下载文件大小
