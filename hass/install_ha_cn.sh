@@ -400,6 +400,12 @@ sudo -u "$HA_USER" bash "$TEMP_HA_SCRIPT" || log_error "以用户 '$HA_USER' 执
 # 清理临时脚本文件
 sudo rm -f "$TEMP_HA_SCRIPT"
 
+# 机器修改：配置 ldconfig 使系统全局能找到 Python 3.14 共享库
+log_info "正在配置系统动态链接器以识别 Python 3.14 库..."
+sudo sh -c "echo '$HA_INSTALL_DIR/python3.14/lib' > /etc/ld.so.conf.d/python3.14.conf"
+sudo ldconfig
+log_info "系统动态链接器配置完成。"
+
 # 4. 创建 systemd 服务
 log_info "正在创建 systemd 服务以便 小鸥智能 开机自启............."
 SYSTEMD_SERVICE_FILE="/etc/systemd/system/homeassistant@.service"
