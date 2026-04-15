@@ -292,7 +292,7 @@ cat > "$TEMP_HA_SCRIPT" << 'EOF_INNER_SCRIPT'
     log_info "正在预安装 小鸥智能 安装主包 配置验证时可能需要的额外依赖..............."
     ADDITIONAL_PACKAGES=(
         "numpy==2.3.2"
-        "xoai-frontend==20260408.5"
+        "xoai-frontend==20260408.7"
         "av==16.0.1"
         "openai==2.21.0"
         "PyTurboJPEG==1.8.0"
